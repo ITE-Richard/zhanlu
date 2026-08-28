@@ -1,14 +1,12 @@
 ---
 name: ite-ec-porting
-description: ITE Embedded Controller 專案移植技能包載入器。用於把已驗證的 EC 韌體（legacy 原廠 SDK 或既有專案）移植到另一顆 ITE EC（IT51526 / IT51386 / IT8298 / IT8233 等）或另一套框架（Zephyr）。涵蓋差異分析方法、SPEC 查證流程、逐項移植檢查表與驗證要求。
+description: ITE Embedded Controller 跨晶片或跨框架移植的專門技能，適用 ITE EC 與 legacy／Zephyr 差異核對。
 ---
 
 # ite-ec-porting 載入器
 
-本檔只是 Claude Code 的掛載點，**不含技能內容本體**，避免同一份方法論出現兩個來源而漂移。
-
-技能本體位於專案根目錄的 `.agents/skills/ite-ec-porting/SKILL.md`（Codex 與 Antigravity 依 `.agents/project.md`
-登記的路徑直接讀取同一份檔案）。
+本檔只是 Claude Code 的掛載點，不含技能內容本體。
+完整讀取 `./.agents/skills/ite-ec-porting/SKILL.md` 並以該檔為唯一技能本體；一般移植同時讀取 `firmware-porting` 與 `ec-controller`。
 
 ## 使用方式
 

@@ -1,15 +1,17 @@
-# 打包輸出
+# 可攜套件輸出
 /dist/
 *.7z
 *.zip
 
-# 專案資源掛載點：只追蹤目錄本身，不追蹤放進去的專案資料
+# 專案專屬資源掛載點；只保留空目錄標記
+/.agents/resources/*
+!/.agents/resources/.gitkeep
 /.agents/reference-projects/*
 !/.agents/reference-projects/.gitkeep
 /.agents/skills/*/references/*
 !/.agents/skills/*/references/.gitkeep
 
-# 工具與系統暫存
+# 常見本機產物
 Thumbs.db
 desktop.ini
 *.bak

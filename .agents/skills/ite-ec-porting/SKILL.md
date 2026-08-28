@@ -1,18 +1,19 @@
 ---
 name: ite-ec-porting
-description: ITE Embedded Controller 專案移植技能包。用於把已驗證的 EC 韌體（legacy 原廠 SDK 或既有專案）移植到另一顆 ITE EC（IT51526 / IT51386 / IT8298 / IT8233 等）或另一套框架（Zephyr）。涵蓋差異分析方法、SPEC 查證流程、逐項移植檢查表與驗證要求。
+description: ITE Embedded Controller 跨晶片或跨框架移植的專門技能。適用 IT51526、IT51386、IT8298、IT8233 等 ITE EC 與 legacy／Zephyr 差異；一般移植先使用 firmware-porting。
 ---
 
 # ITE EC 移植技能包
 
-本技能包為**跨專案通用**內容，不含任何專案專屬資訊。
-專案專屬設定見 `../../project.md`，進度見 `../../TODO.md`，工作規範見專案根目錄 `AGENTS.md`。
+本技能包只補充 ITE EC 特有的差異核對，應與 `../firmware-porting/SKILL.md` 及
+`../ec-controller/SKILL.md` 組合使用。專案事實見 `../../project.md`，資料位置見
+`../../context-index.md`，進度見 `../../TODO.md`，共用規則見專案根目錄 `AGENTS.md`。
 
 ## 專案資源載入與邊界
-- 開始移植前，完整讀取專案根目錄 `AGENTS.md`、`../../project.md` 與 `../../TODO.md`；缺少任一檔案時，先依 `../../README.md` 建立專案層，不可用其他專案資料代替。
-- 依 `project.md` 登記的路徑定位當前專案、唯讀 golden reference 與 SPEC。路徑不存在或型號互相矛盾時，先列出缺口，不可猜測。
-- `references/` 只放當前專案核對所需的 SPEC；它與 golden reference 都是專案資源，不屬於可攜式 skill 本體。
-- 只讀取當前移植 item 需要的 SPEC 章節與程式碼。切換 item 時再載入對應資料，避免把不相關晶片或模組混入判斷。
+- 開始移植前，確認根目錄 `AGENTS.md` 與 `../../module.json`、`../../project.md`、`../../context-index.md`、`../../TODO.md` 已完整載入。
+- 依 `context-index.md` 定位目標專案、唯讀基準、SPEC、schematic 與驗證證據。路徑不存在或型號矛盾時先列缺口，不可猜測。
+- SPEC 與 golden reference 是專案資料，不屬於可攜 skill；可放在專案合法位置或 `.agents/resources/`、`.agents/reference-projects/`，但必須由索引登記。
+- 只讀取當前 work item 需要的 SPEC 章節與程式碼，避免混入不相關晶片或模組。
 
 ## 適用情境
 - 換 SoC：同廠不同型號或不同世代（例：IT51386 → IT51526、IT5570 → IT51526、IT8233 → IT8298）。
@@ -39,7 +40,7 @@ description: ITE Embedded Controller 專案移植技能包。用於把已驗證�
 - Host interface：eSPI VW index、OOB、H2RAM / shared memory 語意
 - PECI 是原生硬體還是走 eSPI OOB relay
 - 特殊硬體機制（例：PWRSW 硬體 WDT、BRAM、CIR、eRPMC 區段）
-產出：SoC 世代差異總表，寫進 `TODO.md` 第 0 節。
+產出：SoC 世代差異與影響，寫進 `TODO.md` 當前 work item。
 
 ### 步驟 3：架構轉換判斷
 legacy → Zephyr 時，逐一判定原始流程應轉為哪種執行體：
@@ -53,7 +54,7 @@ legacy → Zephyr 時，逐一判定原始流程應轉為哪種執行體：
 不可在未確認執行 context 的情況下直接平移 delay 或 ISR 行為。
 
 ### 步驟 4：逐項移植與驗證
-一次只做一項，並依專案根目錄 `AGENTS.md` 的固定流程完成編譯、stage 與中文 commit。
+一次只做一個 work item，並依專案根目錄 `AGENTS.md` 的通用流程完成驗證、追蹤與中文 commit。
 每項都要留下：來源功能位置、目標落點、差異原因、驗證方式。
 
 ## 逐項檢查表
