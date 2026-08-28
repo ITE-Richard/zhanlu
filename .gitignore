@@ -1,0 +1,15 @@
+# 打包輸出
+/dist/
+*.7z
+*.zip
+
+# 專案資源掛載點：只追蹤目錄本身，不追蹤放進去的專案資料
+/.agents/reference-projects/*
+!/.agents/reference-projects/.gitkeep
+/.agents/skills/*/references/*
+!/.agents/skills/*/references/.gitkeep
+
+# 工具與系統暫存
+Thumbs.db
+desktop.ini
+*.bak
