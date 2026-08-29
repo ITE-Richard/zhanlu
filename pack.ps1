@@ -49,7 +49,7 @@ if (-not $sevenZip) {
     throw '7z.exe was not found. Install 7-Zip or add it to PATH.'
 }
 
-$stage = Join-Path $env:TEMP ("firmware-ai-kit-" + [guid]::NewGuid().ToString('N'))
+$stage = Join-Path $env:TEMP ("zhanlu-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $stage | Out-Null
 
 try {

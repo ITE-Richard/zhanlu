@@ -1,8 +1,11 @@
 {
-  "name": "embedded-firmware-ai-collaboration-kit",
-  "version": "4.2.0",
-  "coreVersion": "FIRMWARE-AI-CORE-v4",
-  "archiveName": "firmware-ai-collaboration-kit-v4.2.0.7z",
+  "name": "zhanlu",
+  "version": "4.3.0",
+  "coreVersion": "ZHANLU-CORE-v4",
+  "archiveName": "zhanlu-v4.3.0.7z",
+  "legacyMarkerNames": [
+    "embedded-firmware-ai-collaboration-kit"
+  ],
   "projectKind": "kit-source",
   "requiredSessionFiles": [
     "AGENTS.md",

@@ -1,4 +1,6 @@
-# Embedded Firmware AI Collaboration Kit v4.2.0
+# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.3.0
+
+> 湛盧為十大名劍之首，仁道之劍：持劍者無道，劍自去之。本模組同理——不守規則、不留證據、靠猜作答，它就不為你所用。
 
 這是一套可移植到嵌入式韌體 repository 的 AI 協作模組，讓 Claude Code、Codex 與 Antigravity 共用同一份專案規則、專案資料、工作追蹤與 skills。
 
@@ -17,7 +19,7 @@
 
 | 你手上的東西 | 正確做法 |
 |---|---|
-| 壓縮套件 `firmware-ai-collaboration-kit-v4.2.0.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-ai-module.ps1` |
+| 壓縮套件 `zhanlu-v4.3.0.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-ai-module.ps1` |
 | 模組母版資料夾 | 直接在母版執行 `setup-ai-module.ps1 -TargetPath <目標>`，或先用 `pack.ps1` 產生套件 |
 | 目標專案已裝過舊版模組 | 改用 `-Update`，見〈升級既有專案〉 |
 
@@ -28,8 +30,8 @@
 不要直接把壓縮檔覆蓋解壓到目標 repository。請先解壓到暫存或相鄰資料夾，再執行安裝器；安裝器會在寫入前檢查所有衝突。
 
 ```powershell
-$archive = 'D:\transfer\firmware-ai-collaboration-kit-v4.2.0.7z'
-$kitDir = 'D:\transfer\firmware-ai-kit-v4.2.0'
+$archive = 'D:\transfer\zhanlu-v4.3.0.7z'
+$kitDir = 'D:\transfer\zhanlu-v4.3.0'
 $target = 'D:\work\target-firmware-project'
 
 7z x $archive "-o$kitDir"

@@ -49,8 +49,8 @@ verify-ai-module.ps1
 建議先把 7z 解壓到暫存資料夾，再從暫存資料夾執行安裝器；不要直接覆蓋目標 repository。
 
 ```powershell
-7z x .\firmware-ai-collaboration-kit-v4.2.0.7z -o'.\firmware-ai-kit-v4.2.0'
-powershell -ExecutionPolicy Bypass -File .\firmware-ai-kit-v4.2.0\setup-ai-module.ps1 `
+7z x .\zhanlu-v4.3.0.7z -o'.\zhanlu-v4.3.0'
+powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.3.0\setup-ai-module.ps1 `
   -TargetPath 'D:\path\to\target-project'
 ```
 
@@ -98,7 +98,7 @@ powershell -ExecutionPolicy Bypass -File .\setup-ai-module.ps1 `
 安裝到目標專案後，整個模組都不進該專案的版控。忽略規則寫入目標 repository 的 `.git/info/exclude`：
 
 ```text
-# >>> embedded-firmware-ai-collaboration-kit >>>
+# >>> zhanlu >>>
 /.agents/
 /.claude/
 /AGENTS.md
@@ -107,10 +107,12 @@ powershell -ExecutionPolicy Bypass -File .\setup-ai-module.ps1 `
 /pack.ps1
 /setup-ai-module.ps1
 /verify-ai-module.ps1
-# <<< embedded-firmware-ai-collaboration-kit <<<
+# <<< zhanlu <<<
 ```
 
 用 `.git/info/exclude` 而不是目標的 `.gitignore`，是因為 `.gitignore` 本身會被 commit，會在該專案的歷史中暴露模組檔名。`.git/` 不屬於工作樹，不會被 commit 也不會被 push。標記區塊使 重複安裝與升級保持 idempotent；安裝器以 `git rev-parse --git-common-dir` 定位，worktree 與 submodule 的 `.git` 為檔案時同樣正確。
+
+標記名稱取自 `module.json` 的 `name`，已退役的名稱記錄在 `legacyMarkerNames`。升級時會把當前與所有歷史標記區塊一併移除再重寫，所以模組更名後升級舊安裝不會留下兩組規則。重寫前會先取回舊區塊既有的條目再與新條目取聯集，因此升級也不會讓先前產生的 `.vscode/settings.json` 與 workspace 檔脫離忽略。
 
 目標不是 git repository，或機器上沒有 `git` 時，安裝仍會完成，並改為印出需要手動加入的項目。
 

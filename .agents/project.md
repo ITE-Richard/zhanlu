@@ -4,7 +4,7 @@
 > `pack.ps1` 刻意排除本檔；新專案必須由範本建立自己的 `project.md`。
 
 ## 專案識別
-- 專案識別：`firmware-ai-kit-source`
+- 專案識別：`zhanlu-source`
 - Repository：本目錄
 - 產品類型：AI 協作模組母版
 - 目前 work item：`none`
@@ -19,7 +19,7 @@
 - Build：不適用。
 - Test：`powershell -ExecutionPolicy Bypass -File .\verify-ai-module.ps1 -PackageSource`
 - Package：`powershell -ExecutionPolicy Bypass -File .\pack.ps1`
-- 產出：`./dist/firmware-ai-collaboration-kit-v4.2.0.7z`
+- 產出：`./dist/zhanlu-v4.3.0.7z`
 
 ## 支援工作類型
 - Bug fix、程式碼整合、功能開發、韌體移植、硬體 bring-up、重構與程式碼審查。
@@ -34,5 +34,5 @@
 - 作用中的 `project.md`、`context-index.md` 與 `TODO.md` 不得進入可攜套件。
 
 ## 載入驗證碼
-- 本次驗證碼：`KIT-V4-4A7C21`
+- 本次驗證碼：`ZHANLU-V4-F6C3C4`
 - 本章節置於最末，作為完整載入 sentinel；複製到新專案時必須產生新碼。

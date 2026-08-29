@@ -1,6 +1,6 @@
 # TODO.md — 模組母版工作追蹤
 
-- 專案識別：`firmware-ai-kit-source`
+- 專案識別：`zhanlu-source`
 - 當前 work item：`none`
 
 ## Work items
@@ -16,6 +16,47 @@
 | KIT-008 | 文件 | 可攜套件 | README 補「套用到新專案要填什麼、資料放哪」的逐步指引 | KIT-007 | 完成 | 三份專案層文件的填寫欄位、資料放置位置與首次啟動驗收皆有明確指引，且母版驗證通過 |
 | KIT-009 | 功能開發 | 專案層 schema | project.md 欄位收斂為 enum／pattern，並由 AI 於啟動確認驗證 | KIT-008 | 完成 | schema 寫入 module.json、範本改寫、AGENTS.md 補欄位驗證與技能自動推導、README 同步 |
 | KIT-010 | 功能開發 | 資料邊界 | 目標專案安裝的模組一律不進版控 | KIT-009 | 完成 | 安裝時寫入目標 .git/info/exclude、verify 以 git ls-files 檢出誤追蹤、AGENTS.md Git 規則改寫、README 補風險警告 |
+| KIT-011 | 重構 | 模組識別 | 模組更名為湛盧 zhanlu，五層名稱統一並處理既有安裝遷移 | KIT-010 | 完成 | 名稱五層一致、舊標記可自動清除、舊版套件升級不洩漏、封裝與驗證通過 |
+
+## KIT-011 完成紀錄
+
+### 命名決議（2026-08-30 使用者決議）
+- 模組更名為「湛盧 zhanlu」。湛盧為十大名劍之首、仁道之劍，持劍者無道則劍自去；對應本模組的不可覆寫原則：不守規則、不留證據、靠猜作答就不為其所用。
+- 更名前的名稱有五種變體（`aI module`、`embedded-firmware-ai-collaboration-kit`、`firmware-ai-collaboration-kit`、`firmware-ai-kit-source`、`FIRMWARE-AI-CORE-v4`），彼此不一致，本次收斂為單一字根 `zhanlu`。
+- 版本同步升至 `4.3.0`：套件識別與 core sentinel 都變更，屬 release 級變更。
+- `TODO.md` 內既有的 work item ID 前綴 `KIT-` 與歷史封裝檔名、SHA-256 一律不改寫，那是已發生事實的證據。
+
+### 名稱對照
+| 層級 | 舊值 | 新值 |
+|---|---|---|
+| 模組名 | `embedded-firmware-ai-collaboration-kit` | `zhanlu` |
+| 套件檔 | `firmware-ai-collaboration-kit-v4.2.0.7z` | `zhanlu-v4.3.0.7z` |
+| 母版識別 | `firmware-ai-kit-source` | `zhanlu-source` |
+| core sentinel | `FIRMWARE-AI-CORE-v4` | `ZHANLU-CORE-v4` |
+| 索引版次 | `KIT-CONTEXT-v4` | `ZHANLU-CONTEXT-v4` |
+| exclude 標記 | `# >>> embedded-firmware-ai-collaboration-kit >>>` | `# >>> zhanlu >>>` |
+| workspace 檔 | `aI module.code-workspace` | `zhanlu.code-workspace` |
+
+### 遷移機制
+- `setup-ai-module.ps1` 的 exclude 標記不再寫死，改由 `module.json` 的 `name` 推導；日後再更名只改 JSON。
+- `module.json` 新增 `legacyMarkerNames`，記錄已退役的標記名稱；升級時把當前與所有歷史標記區塊一併移除再重寫，不會堆疊。
+
+### 測試期間發現並修正的 bug
+- **升級會使 generate-once 檔案脫離忽略**：`-Update` 時 `.vscode/settings.json` 與 `<專案>.code-workspace` 已存在，不會進入 `$generatedFiles`，重寫 exclude 區塊時就被漏掉，導致目標專案升級一次後這兩個檔案變成可被 commit，違反 KIT-010 的版控隔離。
+- 修法：改寫前先從舊標記區塊撈回既有條目，與新條目取聯集後再寫回，不靠推測檔案來源，也不會誤把目標專案自有的 `.vscode/settings.json` 納入忽略。
+
+### 驗證證據
+- `setup-ai-module.ps1` AST parse：通過。
+- `verify-ai-module.ps1 -PackageSource`：通過，`zhanlu 4.3.0`、`ZHANLU-CORE-v4`、39 個 portable files、1 個 package-only file、11 個 skills。
+- 殘留掃描：全 repo 僅 `module.json` 的 `legacyMarkerNames` 保留舊名稱（刻意），`TODO.md` 歷史紀錄依決議保留。
+- 全新安裝（改名後母版，乾淨 git 目標）：exit 0，exclude 標記為 `# >>> zhanlu >>>`，`git add -A` 後 staged 0 筆。
+- 真實遷移（`dist/firmware-ai-collaboration-kit-v4.2.0.7z` 安裝後以改名母版 `-Update`）：overwritten 5 / unchanged 33，作用中三份文件保留；舊標記已清除、標記區塊 1 組未堆疊、`/.vscode/settings.json` 與 `/t_legacy.code-workspace` 條目保留、staged 0 筆。
+- `pack.ps1`：exit 0，`zhanlu-v4.3.0.7z`，32348 bytes，39 個檔案。
+- `7z t`：Everything is Ok，Files: 39；SHA-256 `A21D999DDDFA49BD34628606973E4877CDDC1C87455F510BCAD0BE08B347E59B`。
+
+### 尚未處理
+- 母版資料夾本身仍是 `D:\Antigravity\aI module`；資料夾被 IDE 與 shell 佔用，需由使用者關閉編輯器後手動更名為 `zhanlu`。
+- `dist/firmware-ai-collaboration-kit-v4.2.0.7z` 仍在，`pack.ps1` 已提示；是否刪除待使用者決定。
 
 ## KIT-009／KIT-010 完成紀錄
 

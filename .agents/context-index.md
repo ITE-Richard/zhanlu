@@ -1,7 +1,7 @@
 # context-index.md — 模組母版資料索引
 
-- 專案識別：`firmware-ai-kit-source`
-- 索引版次：`KIT-CONTEXT-v4`
+- 專案識別：`zhanlu-source`
+- 索引版次：`ZHANLU-CONTEXT-v4`
 - 原則：本檔只登記權威來源與用途，不複製來源內容。
 
 ## 程式碼與工具
@@ -32,5 +32,5 @@
 | REFERENCE-01 | `./.agents/reference-projects/` | 僅 `.gitignore` | 選用的唯讀基準掛載點；內容預設不進版控 |
 
 ## 索引驗證碼
-- 本次驗證碼：`KIT-CONTEXT-7D31`
+- 本次驗證碼：`ZHANLU-CONTEXT-7CA7`
 - 本章節置於最末，作為索引完整載入 sentinel。

@@ -322,20 +322,40 @@ if (-not $gitCommand) {
                 New-Item -ItemType Directory -Path $excludeDirectory -Force | Out-Null
             }
 
-            $beginMarker = '# >>> embedded-firmware-ai-collaboration-kit >>>'
-            $endMarker = '# <<< embedded-firmware-ai-collaboration-kit <<<'
+            # Markers follow module.json name, so renaming the module needs no script edit.
+            $markerNames = @([string]$manifest.name)
+            if ($manifest.PSObject.Properties['legacyMarkerNames']) {
+                $markerNames += @($manifest.legacyMarkerNames | ForEach-Object { [string]$_ })
+            }
+            $beginMarker = "# >>> $($markerNames[0]) >>>"
+            $endMarker = "# <<< $($markerNames[0]) <<<"
             $existing = if (Test-Path -LiteralPath $excludeFile) {
                 [System.IO.File]::ReadAllText($excludeFile)
             } else {
                 ''
             }
-            # Replacing any previous block keeps repeated installs and updates idempotent.
-            $blockPattern = [regex]::Escape($beginMarker) + '.*?' + [regex]::Escape($endMarker) + '\r?\n?'
-            $existing = [regex]::Replace($existing, $blockPattern, '', [System.Text.RegularExpressions.RegexOptions]::Singleline)
+            # Removing the current block and every retired one keeps repeated installs,
+            # updates and module renames idempotent instead of stacking stale blocks.
+            # Entries already exclusion-protected are carried over first, so an update
+            # never un-ignores a generate-once file that this installer created earlier.
+            $preservedEntries = @()
+            foreach ($markerName in $markerNames) {
+                $blockPattern = [regex]::Escape("# >>> $markerName >>>") + '.*?' + [regex]::Escape("# <<< $markerName <<<") + '
+?
+?'
+                foreach ($match in [regex]::Matches($existing, $blockPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
+                    $preservedEntries += @($match.Value -split '
+?
+' | Where-Object { $_.StartsWith('/') })
+                }
+                $existing = [regex]::Replace($existing, $blockPattern, '', [System.Text.RegularExpressions.RegexOptions]::Singleline)
+            }
             if ($existing.Length -gt 0 -and -not $existing.EndsWith("`n")) {
                 $existing += "`n"
             }
-            $blockLines = @($beginMarker) + @($excludeEntries | ForEach-Object { '/' + $pathPrefix + $_ }) + @($endMarker)
+            $patterns = @($excludeEntries | ForEach-Object { '/' + $pathPrefix + $_ })
+            $patterns += @($preservedEntries | Select-Object -Unique | Where-Object { $patterns -notcontains $_ })
+            $blockLines = @($beginMarker) + $patterns + @($endMarker)
             [System.IO.File]::WriteAllText($excludeFile, $existing + ($blockLines -join "`n") + "`n", $utf8NoBom)
             Write-Output "Module excluded from version control via: $excludeFile"
         }

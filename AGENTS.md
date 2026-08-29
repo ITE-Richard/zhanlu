@@ -120,5 +120,5 @@
 - 「工作開始」：重新完成 Session 載入確認，選定 work item 與技能，載入索引指向的必要證據後再工作。
 
 ## 規範版本
-- 本次規範版本：`FIRMWARE-AI-CORE-v4`
+- 本次規範版本：`ZHANLU-CORE-v4`
 - 本章節置於最末，作為完整載入驗證 sentinel。
