@@ -30,6 +30,12 @@ $portableFiles = @($manifest.portableFiles)
 if ($portableFiles.Count -eq 0) {
     throw 'module.json portableFiles must not be empty.'
 }
+$packageOnlyFiles = @($manifest.packageOnlyFiles)
+$invalidPackageOnlyFiles = @($packageOnlyFiles | Where-Object { $portableFiles -notcontains $_ })
+if ($invalidPackageOnlyFiles.Count -gt 0) {
+    throw "packageOnlyFiles must also exist in portableFiles:`n  $($invalidPackageOnlyFiles -join "`n  ")"
+}
+$installFiles = @($portableFiles | Where-Object { $packageOnlyFiles -notcontains $_ })
 
 $activeFiles = @(
     '.agents/project.md',
@@ -46,7 +52,7 @@ if ($missing) {
     throw "Source kit is missing files:`n  $($missing -join "`n  ")"
 }
 
-$conflicts = foreach ($relativePath in @($portableFiles) + $activeFiles) {
+$conflicts = foreach ($relativePath in @($installFiles) + $activeFiles) {
     if (Test-Path -LiteralPath (Join-Path $targetRoot $relativePath)) {
         $relativePath
     }
@@ -59,7 +65,7 @@ if (-not $PSCmdlet.ShouldProcess($targetRoot, "Install $($manifest.name) $($mani
     return
 }
 
-foreach ($relativePath in $portableFiles) {
+foreach ($relativePath in $installFiles) {
     $source = Join-Path $sourceRoot $relativePath
     $destination = Join-Path $targetRoot $relativePath
     $destinationDirectory = Split-Path -Parent $destination

@@ -1,13 +1,28 @@
 # TODO.md — 模組母版工作追蹤
 
 - 專案識別：`firmware-ai-kit-source`
-- 當前 work item：`KIT-002`
+- 當前 work item：`KIT-003`
 
 ## Work items
 | ID | 工作類型 | 功能域 | 項目 | 相依 | 狀態 | 完成條件 |
 |---|---|---|---|---|---|---|
 | KIT-001 | 重構 | AI 協作模組 | 將 ITE EC 移植母版泛化為跨控制器、跨工作類型模組 | 無 | 完成 | 結構、技能、安裝、驗證、打包全部通過 |
 | KIT-002 | Bug fix | Antigravity 載入 | 修正 workspace rule 未引用共用核心並完成三工具環境驗收 | KIT-001 | 完成 | Antigravity 規則可追溯至 `AGENTS.md`、regression 通過、三工具驗收有明確證據 |
+| KIT-003 | 文件／封裝 | 可攜套件 | 新增套件根目錄 README，重建可直接安裝到其他專案的 7z | KIT-002 | 完成 | README 位於封裝根目錄、不覆蓋目標 README、乾淨與既有 README 目標安裝通過、封裝清單與完整性通過 |
+
+## KIT-003 現況
+- [x] 建立壓縮套件根目錄 `README.md`，包含安裝、初始化、技能路由與資料邊界。
+- [x] 將根目錄 README 標示為 package-only，避免覆蓋目標專案既有 README。
+- [x] 驗證母版、skills、封裝清單與 7z 完整性。
+- [x] 驗證空白及有既有 README 的目標安裝與二次安裝衝突保護。
+- [x] 建立聚焦中文 commit。
+
+## KIT-003 驗證證據
+- `verify-ai-module.ps1 -PackageSource`：通過，33 個 portable files、1 個 package-only file、9 個 skills。
+- 18 份 canonical skill／Claude loader：`quick_validate.py` 全數通過。
+- `firmware-ai-collaboration-kit-v4.0.1.7z`：`7z t` 通過，33 個檔案與 manifest 完全一致；SHA-256 `B481CFC43CEB52255F0177EC989291D3B2BBB9792949236C433ACA20C747E25D`。
+- 空白目標安裝通過，package-only 根目錄 README 未複製到目標專案。
+- 已有 README 的目標安裝通過，原內容保持不變；二次安裝以 exit code 1 在寫入前阻擋。
 
 ## KIT-002 現況
 - [x] 以官方文件確認 Antigravity workspace rules 與 skills 的權威路徑。
@@ -31,10 +46,10 @@
 - 三工具入口不複製核心內文；各自導向同一份檔案。
 
 ## 驗證證據
-- `verify-ai-module.ps1`：通過，32 個 portable files、9 個 skills。
+- `verify-ai-module.ps1 -PackageSource`：通過，33 個 portable files、1 個 package-only file、9 個 skills。
 - 18 份 canonical skill / Claude loader：`quick_validate.py` 全數通過。
 - 乾淨暫存目標安裝、初始化、二次安裝衝突保護：通過。
-- `firmware-ai-collaboration-kit-v4.7z`：`7z t` 通過，解壓後 32 個檔案與 manifest 完全一致。
+- `firmware-ai-collaboration-kit-v4.0.1.7z`：`7z t` 通過，解壓後 33 個檔案與 manifest 完全一致。
 
 ## 三工具環境驗收
 - [x] Claude Code 2.1.251：新專案 `CLAUDE.md` import 符合官方載入契約，9 個 project skill loader 通過原生 strict validation。

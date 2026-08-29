@@ -1,8 +1,8 @@
 {
   "name": "embedded-firmware-ai-collaboration-kit",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "coreVersion": "FIRMWARE-AI-CORE-v4",
-  "archiveName": "firmware-ai-collaboration-kit-v4.7z",
+  "archiveName": "firmware-ai-collaboration-kit-v4.0.1.7z",
   "requiredSessionFiles": [
     "AGENTS.md",
     ".agents/module.json",
@@ -21,7 +21,11 @@
     "keyboard-controller",
     "ite-ec-porting"
   ],
+  "packageOnlyFiles": [
+    "README.md"
+  ],
   "portableFiles": [
+    "README.md",
     "AGENTS.md",
     "CLAUDE.md",
     "GEMINI.md",

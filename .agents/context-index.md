@@ -12,6 +12,7 @@
 | PACK-01 | 打包工具 | `./pack.ps1` | 建立可攜套件 | Primary |
 | SETUP-01 | 安裝工具 | `./setup-ai-module.ps1` | 安全複製與初始化 | Primary |
 | VERIFY-01 | 驗證工具 | `./verify-ai-module.ps1` | 結構、引用與封裝邊界檢查 | Primary |
+| INSTALL-DOC-01 | 套件入口說明 | `./README.md` | 解壓、安裝、初始化與首次啟動步驟 | Primary |
 
 ## 專案文件
 | ID | 類型 | 路徑 | 用途 | 權威性 |

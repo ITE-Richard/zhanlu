@@ -4,7 +4,8 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$RootPath
+    [string]$RootPath,
+    [switch]$PackageSource
 )
 
 $ErrorActionPreference = 'Stop'
@@ -43,13 +44,30 @@ if ($manifest) {
     foreach ($relativePath in @($manifest.requiredSessionFiles)) {
         [void](Require-File $relativePath)
     }
-    foreach ($relativePath in @($manifest.portableFiles)) {
-        [void](Require-File $relativePath)
-    }
 
     $uniquePortableFiles = @($manifest.portableFiles | Select-Object -Unique)
     if ($uniquePortableFiles.Count -ne @($manifest.portableFiles).Count) {
         Add-ValidationError 'module.json portableFiles contains duplicate entries.'
+    }
+
+    $packageOnlyFiles = @($manifest.packageOnlyFiles)
+    $uniquePackageOnlyFiles = @($packageOnlyFiles | Select-Object -Unique)
+    if ($uniquePackageOnlyFiles.Count -ne $packageOnlyFiles.Count) {
+        Add-ValidationError 'module.json packageOnlyFiles contains duplicate entries.'
+    }
+    foreach ($relativePath in $packageOnlyFiles) {
+        if (@($manifest.portableFiles) -notcontains $relativePath) {
+            Add-ValidationError "packageOnlyFiles entry is not in portableFiles: $relativePath"
+        }
+    }
+
+    $filesToRequire = if ($PackageSource) {
+        @($manifest.portableFiles)
+    } else {
+        @($manifest.portableFiles | Where-Object { $packageOnlyFiles -notcontains $_ })
+    }
+    foreach ($relativePath in $filesToRequire) {
+        [void](Require-File $relativePath)
     }
 
     if (Require-File 'AGENTS.md') {
@@ -130,5 +148,6 @@ if ($errors.Count -gt 0) {
 Write-Output "Validation passed: $($manifest.name) $($manifest.version)"
 Write-Output "  coreVersion: $($manifest.coreVersion)"
 Write-Output "  portableFiles: $(@($manifest.portableFiles).Count)"
+Write-Output "  packageOnlyFiles: $(@($manifest.packageOnlyFiles).Count)"
 Write-Output "  skills: $(@($manifest.skills).Count)"
 exit 0

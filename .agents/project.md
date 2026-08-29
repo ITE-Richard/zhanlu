@@ -7,7 +7,7 @@
 - 專案識別：`firmware-ai-kit-source`
 - Repository：本目錄
 - 產品類型：AI 協作模組母版
-- 目前 work item：`KIT-002`
+- 目前 work item：`KIT-003`
 
 ## 控制器與架構
 - 控制器領域：不適用；母版可支援 EC、PD、Lighting、Keyboard 與其他嵌入式控制器。
@@ -17,9 +17,9 @@
 
 ## 專案能力
 - Build：不適用。
-- Test：`powershell -ExecutionPolicy Bypass -File .\verify-ai-module.ps1`
+- Test：`powershell -ExecutionPolicy Bypass -File .\verify-ai-module.ps1 -PackageSource`
 - Package：`powershell -ExecutionPolicy Bypass -File .\pack.ps1`
-- 產出：`./dist/firmware-ai-collaboration-kit-v4.7z`
+- 產出：`./dist/firmware-ai-collaboration-kit-v4.0.1.7z`
 
 ## 支援工作類型
 - Bug fix、程式碼整合、功能開發、韌體移植、硬體 bring-up、重構與程式碼審查。

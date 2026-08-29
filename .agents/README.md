@@ -24,6 +24,7 @@
 AGENTS.md
 CLAUDE.md
 GEMINI.md
+README.md                 # 壓縮套件入口說明；不複製到目標專案根目錄
 pack.ps1
 setup-ai-module.ps1
 verify-ai-module.ps1
@@ -46,14 +47,14 @@ verify-ai-module.ps1
 建議先把 7z 解壓到暫存資料夾，再從暫存資料夾執行安裝器；不要直接覆蓋目標 repository。
 
 ```powershell
-7z x .\firmware-ai-collaboration-kit-v4.7z -o'.\firmware-ai-kit-v4'
-powershell -ExecutionPolicy Bypass -File .\firmware-ai-kit-v4\setup-ai-module.ps1 `
+7z x .\firmware-ai-collaboration-kit-v4.0.1.7z -o'.\firmware-ai-kit-v4.0.1'
+powershell -ExecutionPolicy Bypass -File .\firmware-ai-kit-v4.0.1\setup-ai-module.ps1 `
   -TargetPath 'D:\path\to\target-project'
 ```
 
 安裝器會先完成全量衝突檢查，任何目標檔案已存在時都會中止，不會局部覆蓋。成功後會：
 
-1. 依 `.agents/module.json` 白名單複製通用檔案。
+1. 依 `.agents/module.json` 白名單複製通用檔案；`packageOnlyFiles` 只留在壓縮套件，不複製到目標專案。
 2. 由範本建立新的 `.agents/project.md`、`.agents/context-index.md` 與 `.agents/TODO.md`。
 3. 寫入目標資料夾名稱及新的驗證碼。
 4. 執行 `verify-ai-module.ps1`。
@@ -86,7 +87,7 @@ skill 是方法，不承載專案事實；所有具體型號、路徑、register
 驗證目前資料夾：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\verify-ai-module.ps1
+powershell -ExecutionPolicy Bypass -File .\verify-ai-module.ps1 -PackageSource
 ```
 
 建立可攜套件：
