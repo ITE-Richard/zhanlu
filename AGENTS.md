@@ -59,6 +59,9 @@
 - 程式碼整合：使用 `code-integration`；確認來源版本、差異、衝突與介面相容性。
 - 韌體移植：使用 `firmware-porting`；建立來源到目標對照並驗證行為對等。
 - 硬體 bring-up：使用 `hardware-bringup`；以規格、初始化證據、log 與波形逐步啟用。
+- 架構設計與重構：使用 `architecture-design`；先盤點現況與相依方向，再定義模組邊界與分階段遷移。
+- 多專案收斂：先用 `architecture-design` 決定共用基底與差異層，再用 `code-integration` 執行搬移。
+- 程式碼審查：使用 `firmware-code-review`；區分必須修正與建議，無法從程式碼判定的項目標為待驗證。
 - 控制器領域知識依專案啟用 `ec-controller`、`pd-controller`、`lighting-controller`、`keyboard-controller` 或其他技能。
 - ITE EC 跨晶片／跨框架移植可額外使用 `ite-ec-porting`；它不是所有工作的預設流程。
 - 同一 work item 可組合一個任務技能與一個或多個領域技能。

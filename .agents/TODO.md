@@ -1,7 +1,7 @@
 # TODO.md — 模組母版工作追蹤
 
 - 專案識別：`firmware-ai-kit-source`
-- 當前 work item：`KIT-006`
+- 當前 work item：`KIT-007`
 
 ## Work items
 | ID | 工作類型 | 功能域 | 項目 | 相依 | 狀態 | 完成條件 |
@@ -11,8 +11,24 @@
 | KIT-003 | 文件／封裝 | 可攜套件 | 新增套件根目錄 README，重建可直接安裝到其他專案的 7z | KIT-002 | 完成 | README 位於封裝根目錄、不覆蓋目標 README、乾淨與既有 README 目標安裝通過、封裝清單與完整性通過 |
 | KIT-004 | Bug fix | 資料邊界 | 為 `.agents/resources/` 與 `.agents/reference-projects/` 隨套件提供 gitignore 保護 | KIT-003 | 完成 | 目標專案安裝後掛載點內容預設不進版控、不覆蓋目標根 `.gitignore`、驗證與安裝通過 |
 | KIT-005 | 功能開發 | 安裝工具 | `setup-ai-module.ps1` 新增 `-Update` 升級模式，保留專案層三份作用中文件 | KIT-004 | 完成 | 升級只覆寫可攜檔案、作用中文件零改動、無可攜檔案時拒絕升級、乾淨安裝行為不變 |
-| KIT-006 | 功能開發 | 技能 | 新增 `architecture-design` 與 `code-review` 技能並補齊路由表 | KIT-005 | 尚未開始 | canonical skill、Claude loader、`module.json`、`AGENTS.md` 與 `.agents/README.md` 路由一致且驗證通過 |
+| KIT-006 | 功能開發 | 技能 | 新增 `architecture-design` 與 `firmware-code-review` 技能並補齊路由表 | KIT-005 | 完成 | canonical skill、Claude loader、`module.json`、`AGENTS.md` 與 `.agents/README.md` 路由一致且驗證通過 |
 | KIT-007 | 文件／封裝 | 可攜套件 | README 補前置需求、技能清單、升級與故障排除，版本升版並重建 7z | KIT-006 | 尚未開始 | README 內容與實作一致、版本號一致、乾淨安裝與升級安裝實測通過、封裝清單與完整性通過 |
+
+## KIT-006 現況
+- [x] 新增 `architecture-design` canonical skill，涵蓋分層、模組邊界、介面契約與多專案收斂。
+- [x] 新增 `firmware-code-review` canonical skill，涵蓋正確性、邊界、併發時序、硬體互動與資源。
+- [x] 新增兩份 Claude loader，並更新 `module.json` 的 skills 與可攜白名單。
+- [x] 補齊 `AGENTS.md` 與 `.agents/README.md` 的工作路由，消除核心宣稱支援重構與審查卻無技能的落差。
+- [x] 審查技能改名為 `firmware-code-review`，避開 Claude Code 內建 `code-review` 的撞名遮蔽。
+- [x] `-RemoveStale` 補上空目錄清理，改名後不留空的 skill 目錄。
+
+## KIT-006 驗證證據
+- 撞名證據：技能命名為 `code-review` 時 Claude Code 只掛載 `architecture-design`，內建 `code-review` 被遮蔽；改名為 `firmware-code-review` 後兩者同時可用。
+- Frontmatter strict check：11 個 skill 的 canonical 與 loader 共 22 份檔案，`name` 與目錄一致、`description` 非空、無多餘欄位。
+- `verify-ai-module.ps1 -PackageSource`：通過，37 個 portable files、1 個 package-only file、11 個 skills。
+- 全新目標乾淨安裝：11 個 canonical skill 與 11 個 loader 完整落地。
+- 既有目標 `-Update -RemoveStale`：新增 2 檔、覆寫 4 檔、刪除 2 個 stale 檔並清掉空目錄，作用中三份文件維持保留。
+- 多專案收斂路由：`architecture-design` 先定界線、`code-integration` 執行搬移，已寫入核心與維護說明。
 
 ## KIT-005 現況
 - [x] `setup-ai-module.ps1` 新增 `-Update` 與 `-RemoveStale`，安裝與升級共用同一份白名單與驗證。

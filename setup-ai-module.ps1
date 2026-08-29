@@ -178,7 +178,18 @@ foreach ($relativePath in $installFiles) {
 
 if ($Update -and $RemoveStale) {
     foreach ($relativePath in $staleFiles) {
-        Remove-Item -LiteralPath (Join-Path $targetRoot $relativePath) -Force
+        $stalePath = Join-Path $targetRoot $relativePath
+        Remove-Item -LiteralPath $stalePath -Force
+        # Prune directories the removed file left empty, stopping at the target root.
+        $directory = Split-Path -Parent $stalePath
+        while ($directory -and $directory.TrimEnd('\', '/') -ne $targetRoot) {
+            if (@(Get-ChildItem -LiteralPath $directory -Force).Count -gt 0) {
+                break
+            }
+            $parent = Split-Path -Parent $directory
+            Remove-Item -LiteralPath $directory -Force
+            $directory = $parent
+        }
     }
 }
 

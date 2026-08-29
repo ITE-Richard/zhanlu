@@ -2,7 +2,7 @@
 
 這是一套可移植到嵌入式韌體 repository 的 AI 協作模組，讓 Claude Code、Codex 與 Antigravity 共用同一份專案規則、專案資料、工作追蹤與 skills。
 
-支援的工作包含 Bug 修正、程式碼整合、跨晶片／跨架構移植、硬體 bring-up、重構與程式碼審查；領域涵蓋 EC、USB PD、lighting、keyboard controller，以及 ITE EC 專門移植。
+支援的工作包含 Bug 修正、程式碼整合、跨晶片／跨架構移植、硬體 bring-up、架構設計、多專案收斂與程式碼審查；領域涵蓋 EC、USB PD、lighting、keyboard controller，以及 ITE EC 專門移植。
 
 ## 最短安裝流程
 
@@ -52,8 +52,8 @@ powershell -ExecutionPolicy Bypass -File "$kitDir\setup-ai-module.ps1" `
 - `.agents/module.json`：版本、skills 與可攜檔案白名單。
 - `.agents/templates/`：新專案的 project、context-index 與 TODO 範本。
 - `.agents/rules/`：Antigravity workspace rule。
-- `.agents/skills/`：9 個 canonical skills。
-- `.claude/skills/`：9 個 Claude skill 載入器。
+- `.agents/skills/`：11 個 canonical skills。
+- `.claude/skills/`：11 個 Claude skill 載入器。
 - `setup-ai-module.ps1`：安全安裝與專案層初始化。
 - `verify-ai-module.ps1`：結構、引用與 skill 驗證。
 - `pack.ps1`：由白名單重建 7z 套件。

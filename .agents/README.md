@@ -122,6 +122,9 @@ powershell -ExecutionPolicy Bypass -File .\setup-ai-module.ps1 `
 | 程式碼／分支／供應商元件整合 | `code-integration` |
 | 跨晶片或跨架構移植 | `firmware-porting` |
 | 新板或新硬體啟動 | `hardware-bringup` |
+| 架構設計、分層調整與重構 | `architecture-design` |
+| 多個既有專案收斂成共用基底 | `architecture-design` 先定界線，`code-integration` 執行搬移 |
+| Patch、移植成果或整合結果審查 | `firmware-code-review` |
 | EC／PD／lighting／keyboard domain | 對應的 `*-controller` |
 | ITE EC 特殊移植 | `ite-ec-porting`，搭配 `firmware-porting` |
 
