@@ -13,8 +13,8 @@
 | 工作項目與驗證狀態 | `.agents/TODO.md` | 否，安裝時由範本建立 |
 | 通用工作方法 | `.agents/skills/*/SKILL.md` | 是 |
 | Claude skill 載入器 | `.claude/skills/*/SKILL.md` | 是，只指向通用 skill |
-| SPEC、schematic、log 等 | `.agents/resources/` | 否，每案掛載 |
-| golden reference | `.agents/reference-projects/` | 否，每案掛載或登記外部唯讀路徑 |
+| SPEC、schematic、log 等 | `.agents/resources/` | 只複製 `.gitignore`，內容每案掛載 |
+| golden reference | `.agents/reference-projects/` | 只複製 `.gitignore`，內容每案掛載或登記外部唯讀路徑 |
 
 `CLAUDE.md`、`GEMINI.md` 與 `.agents/rules/project-context.md` 只負責導向上述共同來源，不複製規則內文。Codex 直接從 `AGENTS.md` 進入；不同工具的自動載入能力若有差異，仍以 `AGENTS.md` 的 session 啟動確認為共同檢查點。
 
@@ -37,8 +37,8 @@ verify-ai-module.ps1
   templates/
   rules/
   skills/
-  resources/               # 專案專屬資料掛載點
-  reference-projects/      # 專案專屬參考專案掛載點
+  resources/               # 專案專屬資料掛載點；自帶 .gitignore
+  reference-projects/      # 專案專屬參考專案掛載點；自帶 .gitignore
 .claude/skills/             # Claude 輕量載入器
 ```
 
@@ -66,6 +66,27 @@ powershell -ExecutionPolicy Bypass -File .\firmware-ai-kit-v4.0.1\setup-ai-modul
 - `TODO.md`：當前 work item、完成條件、驗證證據與未決風險。
 
 無法由 repository 或文件查得的板級事實必須向使用者確認，不可由 AI 猜測。
+
+## 資料邊界與版控保護
+
+`.agents/resources/` 與 `.agents/reference-projects/` 各自帶一份 `.gitignore`，內容為：
+
+```gitignore
+*
+!.gitignore
+```
+
+安裝時這兩份 `.gitignore` 會一併複製到目標專案，所以掛載點內的 SPEC、schematic、BOM、log、waveform、binary 與 golden reference 預設不會進版控，也不需要修改目標專案的根 `.gitignore`。
+
+需要把某份證據提交到目標 repository 時，於對應掛載點的 `.gitignore` 明確加上例外，例如：
+
+```gitignore
+*
+!.gitignore
+!issue-1234-repro.log
+```
+
+不要用 `git add -f` 繞過保護；那會讓後續維護者看不出這份資料是刻意提交的。
 
 ## 工作路由
 

@@ -1,0 +1,4 @@
+# 專案專屬資料掛載點：SPEC、schematic、BOM、log、waveform、binary 等一律不進版控。
+# 本檔同時作為目錄保留檔；需要提交特定證據時再逐項加入例外。
+*
+!.gitignore

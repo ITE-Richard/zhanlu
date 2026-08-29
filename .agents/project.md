@@ -30,7 +30,7 @@
 
 ## 專案限制
 - 母版不得包含任何產品專案的 SPEC、schematic、BOM、log、binary、golden reference 或實體路徑。
-- `.agents/resources/` 與 `.agents/reference-projects/` 在母版只保留 `.gitkeep`。
+- `.agents/resources/` 與 `.agents/reference-projects/` 在母版只保留自我保護的 `.gitignore`。
 - 作用中的 `project.md`、`context-index.md` 與 `TODO.md` 不得進入可攜套件。
 
 ## 載入驗證碼

@@ -3,15 +3,15 @@
 *.7z
 *.zip
 
-# 專案專屬資源掛載點；只保留空目錄標記
-/.agents/resources/*
-!/.agents/resources/.gitkeep
-/.agents/reference-projects/*
-!/.agents/reference-projects/.gitkeep
+# 專案專屬掛載點由 .agents/resources/.gitignore 與
+# .agents/reference-projects/.gitignore 自行保護，隨套件複製到目標專案。
+# 此處只補 skill 的選用參考資料目錄。
 /.agents/skills/*/references/*
 !/.agents/skills/*/references/.gitkeep
 
-# 常見本機產物
+# 編輯器與本機產物
+/.vscode/
+*.code-workspace
 Thumbs.db
 desktop.ini
 *.bak

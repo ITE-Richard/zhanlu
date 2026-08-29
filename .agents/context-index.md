@@ -28,8 +28,8 @@
 ## 資料掛載點
 | ID | 路徑 | 母版狀態 | 新專案用途 |
 |---|---|---|---|
-| RESOURCE-01 | `./.agents/resources/` | 僅 `.gitkeep` | 選用的規格或證據掛載點 |
-| REFERENCE-01 | `./.agents/reference-projects/` | 僅 `.gitkeep` | 選用的唯讀基準掛載點 |
+| RESOURCE-01 | `./.agents/resources/` | 僅 `.gitignore` | 選用的規格或證據掛載點；內容預設不進版控 |
+| REFERENCE-01 | `./.agents/reference-projects/` | 僅 `.gitignore` | 選用的唯讀基準掛載點；內容預設不進版控 |
 
 ## 索引驗證碼
 - 本次驗證碼：`KIT-CONTEXT-7D31`

@@ -1,7 +1,7 @@
 # TODO.md — 模組母版工作追蹤
 
 - 專案識別：`firmware-ai-kit-source`
-- 當前 work item：`KIT-003`
+- 當前 work item：`KIT-005`
 
 ## Work items
 | ID | 工作類型 | 功能域 | 項目 | 相依 | 狀態 | 完成條件 |
@@ -9,6 +9,23 @@
 | KIT-001 | 重構 | AI 協作模組 | 將 ITE EC 移植母版泛化為跨控制器、跨工作類型模組 | 無 | 完成 | 結構、技能、安裝、驗證、打包全部通過 |
 | KIT-002 | Bug fix | Antigravity 載入 | 修正 workspace rule 未引用共用核心並完成三工具環境驗收 | KIT-001 | 完成 | Antigravity 規則可追溯至 `AGENTS.md`、regression 通過、三工具驗收有明確證據 |
 | KIT-003 | 文件／封裝 | 可攜套件 | 新增套件根目錄 README，重建可直接安裝到其他專案的 7z | KIT-002 | 完成 | README 位於封裝根目錄、不覆蓋目標 README、乾淨與既有 README 目標安裝通過、封裝清單與完整性通過 |
+| KIT-004 | Bug fix | 資料邊界 | 為 `.agents/resources/` 與 `.agents/reference-projects/` 隨套件提供 gitignore 保護 | KIT-003 | 完成 | 目標專案安裝後掛載點內容預設不進版控、不覆蓋目標根 `.gitignore`、驗證與安裝通過 |
+| KIT-005 | 功能開發 | 安裝工具 | `setup-ai-module.ps1` 新增 `-Update` 升級模式，保留專案層三份作用中文件 | KIT-004 | 尚未開始 | 升級只覆寫可攜檔案、作用中文件零改動、無可攜檔案時拒絕升級、乾淨安裝行為不變 |
+| KIT-006 | 功能開發 | 技能 | 新增 `architecture-design` 與 `code-review` 技能並補齊路由表 | KIT-005 | 尚未開始 | canonical skill、Claude loader、`module.json`、`AGENTS.md` 與 `.agents/README.md` 路由一致且驗證通過 |
+| KIT-007 | 文件／封裝 | 可攜套件 | README 補前置需求、技能清單、升級與故障排除，版本升版並重建 7z | KIT-006 | 尚未開始 | README 內容與實作一致、版本號一致、乾淨安裝與升級安裝實測通過、封裝清單與完整性通過 |
+
+## KIT-004 現況
+- [x] 以 `.agents/resources/.gitignore` 與 `.agents/reference-projects/.gitignore` 取代 `.gitkeep`，內容為 `*` 加 `!.gitignore`。
+- [x] 更新 `module.json` 可攜白名單與母版根目錄 `.gitignore`（掛載點改為自我保護，並忽略編輯器產物）。
+- [x] 更新 `.agents/README.md`、`context-index.md` 與 `project.md` 的資料邊界說明。
+- [x] 驗證母版、乾淨目標安裝與掛載點忽略行為。
+
+## KIT-004 驗證證據
+- `verify-ai-module.ps1 -PackageSource`：通過，33 個 portable files、1 個 package-only file、9 個 skills。
+- 乾淨 git 目標安裝：`setup-ai-module.ps1` exit code 0，複製 32 個可攜檔案並產生 3 份專案層文件。
+- 掛載點保護：在目標放入 `.agents/resources/secret-spec.pdf.txt` 與 `.agents/reference-projects/golden.c` 後執行 `git add -A`，兩者皆未進入 index。
+- `git check-ignore -v`：兩個路徑分別命中 `.agents/resources/.gitignore:3` 與 `.agents/reference-projects/.gitignore:3`。
+- 目標專案根 `.gitignore` 未被建立或修改，不影響既有專案的忽略規則。
 
 ## KIT-003 現況
 - [x] 建立壓縮套件根目錄 `README.md`，包含安裝、初始化、技能路由與資料邊界。

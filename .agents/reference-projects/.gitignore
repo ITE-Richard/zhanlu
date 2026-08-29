@@ -1,0 +1,4 @@
+# 唯讀基準掛載點：golden reference、vendor tree、upstream 副本一律不進版控。
+# 本檔同時作為目錄保留檔；基準應以外部唯讀路徑登記於 context-index.md。
+*
+!.gitignore
