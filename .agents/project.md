@@ -7,7 +7,7 @@
 - 專案識別：`firmware-ai-kit-source`
 - Repository：本目錄
 - 產品類型：AI 協作模組母版
-- 目前 work item：`KIT-001`
+- 目前 work item：`KIT-002`
 
 ## 控制器與架構
 - 控制器領域：不適用；母版可支援 EC、PD、Lighting、Keyboard 與其他嵌入式控制器。

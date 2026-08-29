@@ -77,6 +77,23 @@ if ($manifest) {
         }
     }
 
+    $antigravityRule = '.agents/rules/project-context.md'
+    if (Require-File $antigravityRule) {
+        $ruleContent = Get-Content -LiteralPath (Join-Path $root $antigravityRule) -Raw -Encoding UTF8
+        $expectedRuleImports = @(
+            '@../../AGENTS.md',
+            '@../module.json',
+            '@../project.md',
+            '@../context-index.md',
+            '@../TODO.md'
+        )
+        foreach ($import in $expectedRuleImports) {
+            if ($ruleContent -notmatch [regex]::Escape($import)) {
+                Add-ValidationError "$antigravityRule is missing shared-source reference: $import"
+            }
+        }
+    }
+
     foreach ($skill in @($manifest.skills)) {
         $canonical = ".agents/skills/$skill/SKILL.md"
         $loader = ".claude/skills/$skill/SKILL.md"
