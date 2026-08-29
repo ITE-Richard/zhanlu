@@ -63,8 +63,11 @@ try {
         Copy-Item -LiteralPath $source -Destination $destination
     }
 
-    $stageFiles = @(Get-ChildItem -LiteralPath $stage -Recurse -File | ForEach-Object {
-        $_.FullName.Substring($stage.Length).TrimStart('\', '/').Replace('\', '/')
+    # -Name yields paths relative to the staging root. Do not derive them by trimming
+    # FullName: TEMP can be an 8.3 short path while FullName is expanded, and the two
+    # lengths then disagree.
+    $stageFiles = @(Get-ChildItem -LiteralPath $stage -Recurse -File -Name | ForEach-Object {
+        $_.Replace('\', '/')
     })
     $difference = Compare-Object -ReferenceObject ($portableFiles | Sort-Object) -DifferenceObject ($stageFiles | Sort-Object)
     if ($difference) {
@@ -117,6 +120,16 @@ try {
     Write-Output "Archive created: $archive"
     Write-Output "Size: $((Get-Item -LiteralPath $archive).Length) bytes"
     Write-Output "File count: $($portableFiles.Count)"
+
+    # Older archives stay on disk so nothing is destroyed here, but they are easy to
+    # hand over by mistake. Name them so the maintainer can clear them deliberately.
+    $otherArchives = @(Get-ChildItem -LiteralPath $outDirectory -Filter '*.7z' -File |
+        Where-Object { $_.Name -ne [string]$manifest.archiveName })
+    if ($otherArchives.Count -gt 0) {
+        Write-Output "Warning: $($otherArchives.Count) older archive(s) remain in $outDirectory."
+        foreach ($item in $otherArchives) { Write-Output "  [old] $($item.Name)" }
+        Write-Output '  Delete them so only the current package can be distributed.'
+    }
 } finally {
     if (Test-Path -LiteralPath $stage) {
         Remove-Item -LiteralPath $stage -Recurse -Force

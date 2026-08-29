@@ -47,8 +47,8 @@ verify-ai-module.ps1
 建議先把 7z 解壓到暫存資料夾，再從暫存資料夾執行安裝器；不要直接覆蓋目標 repository。
 
 ```powershell
-7z x .\firmware-ai-collaboration-kit-v4.0.1.7z -o'.\firmware-ai-kit-v4.0.1'
-powershell -ExecutionPolicy Bypass -File .\firmware-ai-kit-v4.0.1\setup-ai-module.ps1 `
+7z x .\firmware-ai-collaboration-kit-v4.1.0.7z -o'.\firmware-ai-kit-v4.1.0'
+powershell -ExecutionPolicy Bypass -File .\firmware-ai-kit-v4.1.0\setup-ai-module.ps1 `
   -TargetPath 'D:\path\to\target-project'
 ```
 

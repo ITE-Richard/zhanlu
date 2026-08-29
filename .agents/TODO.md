@@ -1,7 +1,7 @@
 # TODO.md — 模組母版工作追蹤
 
 - 專案識別：`firmware-ai-kit-source`
-- 當前 work item：`KIT-007`
+- 當前 work item：`none`
 
 ## Work items
 | ID | 工作類型 | 功能域 | 項目 | 相依 | 狀態 | 完成條件 |
@@ -12,7 +12,31 @@
 | KIT-004 | Bug fix | 資料邊界 | 為 `.agents/resources/` 與 `.agents/reference-projects/` 隨套件提供 gitignore 保護 | KIT-003 | 完成 | 目標專案安裝後掛載點內容預設不進版控、不覆蓋目標根 `.gitignore`、驗證與安裝通過 |
 | KIT-005 | 功能開發 | 安裝工具 | `setup-ai-module.ps1` 新增 `-Update` 升級模式，保留專案層三份作用中文件 | KIT-004 | 完成 | 升級只覆寫可攜檔案、作用中文件零改動、無可攜檔案時拒絕升級、乾淨安裝行為不變 |
 | KIT-006 | 功能開發 | 技能 | 新增 `architecture-design` 與 `firmware-code-review` 技能並補齊路由表 | KIT-005 | 完成 | canonical skill、Claude loader、`module.json`、`AGENTS.md` 與 `.agents/README.md` 路由一致且驗證通過 |
-| KIT-007 | 文件／封裝 | 可攜套件 | README 補前置需求、技能清單、升級與故障排除，版本升版並重建 7z | KIT-006 | 尚未開始 | README 內容與實作一致、版本號一致、乾淨安裝與升級安裝實測通過、封裝清單與完整性通過 |
+| KIT-007 | 文件／封裝 | 可攜套件 | README 補前置需求、技能清單、升級與故障排除，版本升版並重建 7z | KIT-006 | 完成 | README 內容與實作一致、版本號一致、乾淨安裝與升級安裝實測通過、封裝清單與完整性通過 |
+
+## KIT-007 現況
+- [x] README 補前置需求（PowerShell 5.1、7-Zip、VSCode 重新載入視窗）。
+- [x] README 補 11 個技能的清單與用途，以及多專案收斂的組合方式。
+- [x] README 補升級章節、一台機器多專案的建議，以及 9 項故障排除對照。
+- [x] 套件版本升至 `4.1.0`，`module.json`、`project.md` 與兩份 README 版本字串一致。
+- [x] 修正 `pack.ps1` 在 8.3 短路徑 TEMP 下 staging 比對失敗的 bug。
+- [x] `pack.ps1` 打包後提醒 `dist/` 內殘留的舊封裝。
+- [x] 重建 7z 並完成套件端對端安裝驗收。
+
+## KIT-007 驗證證據
+- `pack.ps1` bug：`$env:TEMP` 為 8.3 短路徑而 `Get-ChildItem` 的 `FullName` 已展開為長路徑，兩者相差 5 字元，`Substring($stage.Length)` 切出多餘前綴，造成 37 個檔案全部誤判為差異而無法打包。改用 `Get-ChildItem -Name` 取相對路徑後通過。
+- `verify-ai-module.ps1 -PackageSource`：通過，37 個 portable files、1 個 package-only file、11 個 skills。
+- `firmware-ai-collaboration-kit-v4.1.0.7z`：`7z t` 通過，37 個檔案；SHA-256 `283E6DCC05593BA1D5FAB76B652AB640E8A877A5C9CE89E517C7DDA71671D64E`。
+- 解壓內容與 manifest 完全一致，差異 0。
+- 乾淨 git 專案安裝：11 個 canonical skill 與 11 個 loader 落地，package-only 根 README 未複製；放入 `.agents/resources/ec-spec.txt` 後 `git add -A` 未帶入 index。
+- 已有 README 的專案安裝：原 README 內容未被更動。
+- 二次安裝：exit code 1 阻擋，並提示改用 `-Update`。
+- 由套件對已安裝目標執行 `-Update`：exit code 0，36 個檔案內容相同、零覆寫，作用中三份文件保留。
+
+## KIT-007 使用者確認事項
+- [x] Codex 與 Antigravity 的 skill discovery：使用者於 2026-08-29 確認兩個工具在 v4.1.0 下載入正常，不需補工具專屬 loader。
+- [x] `dist/` 舊封裝已刪除，只保留 `firmware-ai-collaboration-kit-v4.1.0.7z`。
+- [x] KIT-007 的追蹤更新已依使用者指示併入同一筆 commit。
 
 ## KIT-006 現況
 - [x] 新增 `architecture-design` canonical skill，涵蓋分層、模組邊界、介面契約與多專案收斂。
@@ -104,6 +128,7 @@
 - [x] Claude Code 2.1.251：新專案 `CLAUDE.md` import 符合官方載入契約，9 個 project skill loader 通過原生 strict validation。
 - [x] Codex CLI 0.150.0-alpha.12.2：獨立新專案的本機 prompt-input 載入 1 份目標 `AGENTS.md`、9 個 repo skills，父 repository 污染為 0。
 - [x] Antigravity IDE 1.107.0：官方 `.agents/rules` 與 `.agents/skills` 路徑相符；新專案有 1 個 workspace rule、9 個 skills，rule 可追溯至 `AGENTS.md`。
+- [x] v4.1.0（11 skills）：Claude Code 於本 session 直接掛載 `architecture-design` 與 `firmware-code-review`；Codex 與 Antigravity 由使用者於 2026-08-29 確認載入正常。
 
 ## KIT-002 驗證證據
 - 修正前：workspace rule 未引用 `AGENTS.md`，舊版 `verify-ai-module.ps1` 仍回報通過。
