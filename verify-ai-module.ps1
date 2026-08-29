@@ -130,6 +130,49 @@ if ($manifest) {
     }
 }
 
+# An installed module must stay out of the target repository's version control. The kit
+# source is the opposite case: there the module is meant to be tracked, so it is skipped.
+# setup-ai-module.ps1 rewrites projectKind to 'firmware' in every installed copy.
+if ($manifest -and $manifest.projectKind -ne 'kit-source') {
+    $gitCommand = Get-Command git -ErrorAction SilentlyContinue
+    if ($gitCommand) {
+        Push-Location -LiteralPath $root
+        try {
+            # Windows PowerShell turns a native command's redirected stderr into an ErrorRecord,
+            # which is terminating while ErrorActionPreference is 'Stop'. Outside a repository
+            # git writes to stderr by design, so the preference is relaxed for this probe only.
+            $previousErrorAction = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            try {
+                $insideWorkTree = & $gitCommand.Source rev-parse --is-inside-work-tree 2>$null
+            } finally {
+                $ErrorActionPreference = $previousErrorAction
+            }
+            if ($LASTEXITCODE -eq 0 -and $insideWorkTree -eq 'true') {
+                $moduleGitPaths = @(
+                    '.agents',
+                    '.claude',
+                    'AGENTS.md',
+                    'CLAUDE.md',
+                    'GEMINI.md',
+                    'pack.ps1',
+                    'setup-ai-module.ps1',
+                    'verify-ai-module.ps1'
+                )
+                $trackedFiles = @(& $gitCommand.Source ls-files -- $moduleGitPaths)
+                if ($LASTEXITCODE -eq 0 -and $trackedFiles.Count -gt 0) {
+                    Add-ValidationError (
+                        "module files are tracked by this repository ($($trackedFiles.Count) file(s)); " +
+                        "untrack them with: git rm -r --cached $($moduleGitPaths -join ' ')"
+                    )
+                }
+            }
+        } finally {
+            Pop-Location
+        }
+    }
+}
+
 foreach ($activeFile in @('.agents/project.md', '.agents/context-index.md', '.agents/TODO.md')) {
     if (Require-File $activeFile) {
         $content = Get-Content -LiteralPath (Join-Path $root $activeFile) -Raw -Encoding UTF8

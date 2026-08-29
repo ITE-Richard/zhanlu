@@ -13,6 +13,8 @@
 | 工作項目與驗證狀態 | `.agents/TODO.md` | 否，安裝時由範本建立 |
 | 通用工作方法 | `.agents/skills/*/SKILL.md` | 是 |
 | Claude skill 載入器 | `.claude/skills/*/SKILL.md` | 是，只指向通用 skill |
+| 欄位合法值 schema | `.agents/module.json` 的 `projectSchema` | 是，擴充一律回母版改再 `-Update` 下發 |
+| 編輯器設定 | `.agents/templates/vscode-settings.json`、`workspace.code-workspace` | 是，安裝時只在目標缺少時產生一次 |
 | SPEC、schematic、log 等 | `.agents/resources/` | 只複製 `.gitignore`，內容每案掛載 |
 | golden reference | `.agents/reference-projects/` | 只複製 `.gitignore`，內容每案掛載或登記外部唯讀路徑 |
 
@@ -47,8 +49,8 @@ verify-ai-module.ps1
 建議先把 7z 解壓到暫存資料夾，再從暫存資料夾執行安裝器；不要直接覆蓋目標 repository。
 
 ```powershell
-7z x .\firmware-ai-collaboration-kit-v4.1.0.7z -o'.\firmware-ai-kit-v4.1.0'
-powershell -ExecutionPolicy Bypass -File .\firmware-ai-kit-v4.1.0\setup-ai-module.ps1 `
+7z x .\firmware-ai-collaboration-kit-v4.2.0.7z -o'.\firmware-ai-kit-v4.2.0'
+powershell -ExecutionPolicy Bypass -File .\firmware-ai-kit-v4.2.0\setup-ai-module.ps1 `
   -TargetPath 'D:\path\to\target-project'
 ```
 
@@ -93,24 +95,33 @@ powershell -ExecutionPolicy Bypass -File .\setup-ai-module.ps1 `
 
 ## 資料邊界與版控保護
 
-`.agents/resources/` 與 `.agents/reference-projects/` 各自帶一份 `.gitignore`，內容為：
+安裝到目標專案後，整個模組都不進該專案的版控。忽略規則寫入目標 repository 的 `.git/info/exclude`：
 
-```gitignore
-*
-!.gitignore
+```text
+# >>> embedded-firmware-ai-collaboration-kit >>>
+/.agents/
+/.claude/
+/AGENTS.md
+/CLAUDE.md
+/GEMINI.md
+/pack.ps1
+/setup-ai-module.ps1
+/verify-ai-module.ps1
+# <<< embedded-firmware-ai-collaboration-kit <<<
 ```
 
-安裝時這兩份 `.gitignore` 會一併複製到目標專案，所以掛載點內的 SPEC、schematic、BOM、log、waveform、binary 與 golden reference 預設不會進版控，也不需要修改目標專案的根 `.gitignore`。
+用 `.git/info/exclude` 而不是目標的 `.gitignore`，是因為 `.gitignore` 本身會被 commit，會在該專案的歷史中暴露模組檔名。`.git/` 不屬於工作樹，不會被 commit 也不會被 push。標記區塊使 重複安裝與升級保持 idempotent；安裝器以 `git rev-parse --git-common-dir` 定位，worktree 與 submodule 的 `.git` 為檔案時同樣正確。
 
-需要把某份證據提交到目標 repository 時，於對應掛載點的 `.gitignore` 明確加上例外，例如：
+目標不是 git repository，或機器上沒有 `git` 時，安裝仍會完成，並改為印出需要手動加入的項目。
 
-```gitignore
-*
-!.gitignore
-!issue-1234-repro.log
-```
+`.agents/resources/` 與 `.agents/reference-projects/` 仍各自保留一份 `.gitignore`（`*` 加 `!.gitignore`），作為 `.git/info/exclude` 未生效時的第二道防線。
 
-不要用 `git add -f` 繞過保護；那會讓後續維護者看不出這份資料是刻意提交的。
+兩個必須向使用者說明的後果：
+
+- 在目標專案執行 `git clean -x` 會刪除整個模組，包含工作歷史與 `.agents/resources/` 內的證據。
+- `.agents/` 沒有版控後盾，必須納入使用者自己的備份；`-Update` 會在寫入前把三份作用中文件複製到 `.agents/.backup-<時間戳>/`。
+
+母版 repository 本身照常全部版控，本節只適用安裝到目標專案的那一份。
 
 ## 工作路由
 

@@ -16,7 +16,7 @@
 |---|---|---|
 | 共用核心 | `AGENTS.md` | 不可覆寫的安全、證據、變更與驗證原則 |
 | 工具入口 | `CLAUDE.md` / `GEMINI.md` | 將工具導向同一份核心與專案資料 |
-| 模組清單 | `.agents/module.json` | 模組版本、必讀檔案與可攜白名單 |
+| 模組清單 | `.agents/module.json` | 模組版本、必讀檔案、欄位 schema 與可攜白名單 |
 | 專案設定 | `.agents/project.md` | 目標專案已確認事實、能力與限制 |
 | 資料索引 | `.agents/context-index.md` | 程式碼、文件、基準、證據的路徑與權威性 |
 | 工作追蹤 | `.agents/TODO.md` | work item、相依、狀態、決策與驗證 |
@@ -37,7 +37,12 @@
   4. `./.agents/context-index.md`
   5. `./.agents/TODO.md`
 - 缺少任一檔案時停止實作，指出缺檔並依 `./.agents/README.md` 修復專案層。
-- 完成讀取後輸出：`啟動確認：core=<版本> / project=<專案識別> / context=<索引版次> / work-item=<ID 或 none> / missing=<none 或清單>`。
+- 讀取後依 `.agents/module.json` 的 `projectSchema` 檢查 `project.md` 欄位，結果分三態：
+  - `ok`：必填欄位皆已填且合法。
+  - `未填 <n> 欄`：欄位值為 `待確認`，列為警告，可繼續工作但需在回覆中列出缺口。
+  - `不合法: <欄位清單>`：值不在 schema 允許範圍內，停止實質工作並要求修正。
+- `projectSchema.appliesTo` 與 `projectKind` 不符時跳過欄位檢查，`schema` 回報 `n/a`。
+- 完成讀取後輸出：`啟動確認：core=<版本> / project=<專案識別> / context=<索引版次> / work-item=<ID 或 none> / schema=<ok｜未填 n 欄｜不合法: 清單｜n/a> / missing=<none 或清單>`。
 - 驗證值必須取自檔案實際內容，不可推測。確認應在首次實質工作前完成，不要求早於必要的檔案讀取工具呼叫。
 - 收到「工作開始」時，重新讀取五個檔案，並依當前 work item 載入相關技能與索引資料。
 
@@ -53,6 +58,7 @@
 - `context-index.md` 是資料路由唯一來源。先依索引判定權威資料，再只讀當前工作所需內容。
 - SPEC、schematic、BOM、log、waveform、issue、commit 或 reference code 的結論必須可追溯到來源位置。
 - 若資料互相矛盾，先標示衝突與權威性，不可自行挑選方便的答案。
+- 來自 `.agents/reference-projects/` 的搜尋或閱讀結果必須標示為唯讀基準，不可與目標專案的結果混列或混報。
 
 ## 工作類型與技能路由
 - Bug fix：使用 `bug-fix`；先重現與定位根因，再做最小修正及 regression。
@@ -62,7 +68,7 @@
 - 架構設計與重構：使用 `architecture-design`；先盤點現況與相依方向，再定義模組邊界與分階段遷移。
 - 多專案收斂：先用 `architecture-design` 決定共用基底與差異層，再用 `code-integration` 執行搬移。
 - 程式碼審查：使用 `firmware-code-review`；區分必須修正與建議，無法從程式碼判定的項目標為待驗證。
-- 控制器領域知識依專案啟用 `ec-controller`、`pd-controller`、`lighting-controller`、`keyboard-controller` 或其他技能。
+- 領域技能由 `project.md` 的控制器領域依 `projectSchema.skillRouting` 自動推導，不另設欄位：`EC` 載入 `ec-controller`，`PD` 載入 `pd-controller`，`Keyboard & Lighting` 同時載入 `keyboard-controller` 與 `lighting-controller`。
 - ITE EC 跨晶片／跨框架移植可額外使用 `ite-ec-porting`；它不是所有工作的預設流程。
 - 同一 work item 可組合一個任務技能與一個或多個領域技能。
 
@@ -80,6 +86,9 @@
 - 不猜測 register value、pin、polarity、timing、delay、reset sequence 或 power rail ordering。
 - 不為通過 build 而關閉 warning、繞過 assert、註解測試或忽略 error handling。
 - 不修改 generated code、第三方 vendor code、binary、build output 或唯讀基準，除非使用者明確要求。
+- 模組自身在目標專案內唯讀：`AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`.agents/module.json`、`.agents/skills/`、`.agents/templates/`、`.agents/rules/`、`.claude/` 與三支 `.ps1` 一律不得修改；共用規則的修改回到模組母版，再以 `-Update` 下發。
+- 上述唯讀範圍的例外只有三份作用中文件（`.agents/project.md`、`.agents/context-index.md`、`.agents/TODO.md`）與兩個資料掛載點（`.agents/resources/`、`.agents/reference-projects/`）。
+- 專案內部另有不得修改的路徑時，登記於 `project.md` 的額外唯讀區域。
 - 不混合無關 work item，不重排無關程式碼；patch 必須可審查、可驗證、可回退。
 - 需求是分析或診斷時只提供證據與結論，不自行擴張為實作。
 
@@ -92,6 +101,9 @@
 
 ## Git 規則
 - 每筆 commit 只對應一個已完成且已驗證的 work item，message 使用簡潔中文。
+- 目標專案的 commit 只包含韌體原始碼變更。模組檔案（`.agents/`、`.claude/` 與根目錄模組檔）不進目標專案版控，因此不 stage、不 commit，`TODO.md` 的更新也不併入 commit。
+- 模組母版本身照常版控，本規則只適用安裝到目標專案的那一份。
+- 發現模組檔案已被目標 repository 追蹤時，先回報並提供 `git rm -r --cached` 的修復步驟，不自行執行。
 - Commit 前確認沒有混入使用者既有修改、機密資料、SPEC、reference 或 build output。
 - 未經使用者明確要求，不 amend、不 push、不做破壞性 Git 操作。
 
@@ -100,6 +112,8 @@
 - 可攜內容以 `.agents/module.json` 的 `portableFiles` 白名單為準，由 `pack.ps1` 實作並由 `verify-ai-module.ps1` 驗證。
 - 母版作用中的 `project.md`、`context-index.md`、`TODO.md`、SPEC、reference 與證據不得進入可攜套件。
 - 目標專案必須由 `.agents/templates/` 產生新的專案層，並填入新的專案識別與載入驗證碼。
+- 安裝到目標專案時，模組檔案的忽略規則寫入該 repository 的 `.git/info/exclude`，不新增也不修改目標的 `.gitignore`，避免在版控中暴露模組檔名。
+- `.agents/` 未進目標專案版控，工作歷史與證據只存在本機工作副本；需提醒使用者納入日常備份，並避免在目標專案執行 `git clean -x`。
 
 ## 溝通指令
 - 「套用到新專案」：先執行或依照 `setup-ai-module.ps1` 盤點衝突，建立專案層，分列可自動查得與需使用者提供的資料，再執行驗證。

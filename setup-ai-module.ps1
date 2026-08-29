@@ -8,6 +8,13 @@
     Update mode refreshes an already installed module in place. It overwrites portable
     files only and never touches the active project layer:
     .agents/project.md, .agents/context-index.md and .agents/TODO.md.
+    The active project layer is copied to .agents/.backup-<timestamp> first, because the
+    installed module is deliberately kept out of the target repository's version control
+    and therefore has no other safety net.
+
+    Both modes keep the module out of the target repository by writing an exclusion block
+    to .git/info/exclude. The target's own .gitignore is never created or modified, so the
+    module never becomes visible in the target project's history.
 .PARAMETER TargetPath
     Root directory of the target project.
 .PARAMETER Update
@@ -64,6 +71,28 @@ $activeFiles = @(
     '.agents/project.md',
     '.agents/context-index.md',
     '.agents/TODO.md'
+)
+
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+
+# Editor settings are generated from templates the first time they are missing. They are
+# never part of the conflict check and never overwritten, so a target that already has its
+# own .vscode/settings.json keeps it and the install still succeeds.
+$generateOnce = @(
+    @{ Template = '.agents/templates/vscode-settings.json'; Destination = '.vscode/settings.json' },
+    @{ Template = '.agents/templates/workspace.code-workspace'; Destination = (Split-Path -Leaf $targetRoot) + '.code-workspace' }
+)
+
+# Paths that must never be tracked by the target repository.
+$moduleGitPaths = @(
+    '.agents/',
+    '.claude/',
+    'AGENTS.md',
+    'CLAUDE.md',
+    'GEMINI.md',
+    'pack.ps1',
+    'setup-ai-module.ps1',
+    'verify-ai-module.ps1'
 )
 
 $missing = foreach ($relativePath in $portableFiles) {
@@ -151,6 +180,15 @@ if ($Update) {
     if (-not $PSCmdlet.ShouldProcess($targetRoot, "Update $($manifest.name) to $($manifest.version)")) {
         return
     }
+
+    # The installed module is not in version control, so an update has no git safety net.
+    $backupDirectory = Join-Path $targetRoot ('.agents\.backup-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+    New-Item -ItemType Directory -Path $backupDirectory -Force | Out-Null
+    foreach ($relativePath in $activeFiles) {
+        Copy-Item -LiteralPath (Join-Path $targetRoot $relativePath) `
+            -Destination (Join-Path $backupDirectory (Split-Path -Leaf $relativePath)) -Force
+    }
+    Write-Output "Active project layer backed up to: $backupDirectory"
 } else {
     $conflicts = foreach ($relativePath in @($installFiles) + $activeFiles) {
         if (Test-Path -LiteralPath (Join-Path $targetRoot $relativePath)) {
@@ -203,7 +241,6 @@ if (-not $Update) {
     $validationCode = "PROJECT-$(([guid]::NewGuid().ToString('N').Substring(0, 8)).ToUpperInvariant())"
     $contextCode = "CONTEXT-$(([guid]::NewGuid().ToString('N').Substring(0, 8)).ToUpperInvariant())"
     $contextRevision = "$projectId-CONTEXT-v1"
-    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
     $projectTemplate = Get-Content -LiteralPath (Join-Path $targetRoot '.agents\templates\project.md') -Raw -Encoding UTF8
     $projectContent = $projectTemplate.Replace('__PROJECT_ID__', $projectId)
@@ -222,6 +259,91 @@ if (-not $Update) {
     [System.IO.File]::WriteAllText((Join-Path $targetRoot '.agents\TODO.md'), $todoContent, $utf8NoBom)
 }
 
+# The installed copy is a firmware project, not the kit source. Patching the value
+# textually keeps the manifest's original formatting and non-ASCII text readable.
+$targetManifestFile = Join-Path $targetRoot '.agents\module.json'
+$manifestText = [System.IO.File]::ReadAllText($targetManifestFile)
+$patchedManifestText = [regex]::Replace($manifestText, '"projectKind"\s*:\s*"[^"]*"', '"projectKind": "firmware"')
+if ($patchedManifestText -ne $manifestText) {
+    [System.IO.File]::WriteAllText($targetManifestFile, $patchedManifestText, $utf8NoBom)
+}
+
+$generatedFiles = @()
+foreach ($entry in $generateOnce) {
+    $destination = Join-Path $targetRoot $entry.Destination
+    if (Test-Path -LiteralPath $destination) {
+        Write-Output "Editor settings already present, left untouched: $($entry.Destination)"
+        continue
+    }
+    $destinationDirectory = Split-Path -Parent $destination
+    if (-not (Test-Path -LiteralPath $destinationDirectory)) {
+        New-Item -ItemType Directory -Path $destinationDirectory -Force | Out-Null
+    }
+    Copy-Item -LiteralPath (Join-Path $targetRoot $entry.Template) -Destination $destination -Force
+    Write-Output "Editor settings created: $($entry.Destination)"
+    $generatedFiles += $entry.Destination
+}
+
+$excludeEntries = @($moduleGitPaths) + @($generatedFiles)
+$gitCommand = Get-Command git -ErrorAction SilentlyContinue
+if (-not $gitCommand) {
+    Write-Warning 'git was not found; the module was NOT excluded from version control.'
+    Write-Output  'Add these lines to <target>/.git/info/exclude manually:'
+    foreach ($entry in $excludeEntries) { Write-Output "  /$entry" }
+} else {
+    Push-Location -LiteralPath $targetRoot
+    try {
+        # Windows PowerShell turns a native command's redirected stderr into an ErrorRecord,
+        # which is terminating while ErrorActionPreference is 'Stop'. Outside a repository
+        # git writes to stderr by design, so the preference is relaxed for this probe only.
+        $previousErrorAction = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            $insideWorkTree = & $gitCommand.Source rev-parse --is-inside-work-tree 2>$null
+        } finally {
+            $ErrorActionPreference = $previousErrorAction
+        }
+        if ($LASTEXITCODE -ne 0 -or $insideWorkTree -ne 'true') {
+            Write-Output 'Target is not a git repository; version-control exclusion skipped.'
+        } else {
+            $gitCommonDir = (& $gitCommand.Source rev-parse --git-common-dir).Trim()
+            if (-not [System.IO.Path]::IsPathRooted($gitCommonDir)) {
+                $gitCommonDir = Join-Path $targetRoot $gitCommonDir
+            }
+            $pathPrefix = (& $gitCommand.Source rev-parse --show-prefix)
+            if ($null -eq $pathPrefix) { $pathPrefix = '' } else { $pathPrefix = $pathPrefix.Trim() }
+            if ($pathPrefix) {
+                Write-Warning "Target is a subdirectory of a repository; patterns are prefixed with $pathPrefix"
+            }
+
+            $excludeFile = Join-Path $gitCommonDir 'info\exclude'
+            $excludeDirectory = Split-Path -Parent $excludeFile
+            if (-not (Test-Path -LiteralPath $excludeDirectory)) {
+                New-Item -ItemType Directory -Path $excludeDirectory -Force | Out-Null
+            }
+
+            $beginMarker = '# >>> embedded-firmware-ai-collaboration-kit >>>'
+            $endMarker = '# <<< embedded-firmware-ai-collaboration-kit <<<'
+            $existing = if (Test-Path -LiteralPath $excludeFile) {
+                [System.IO.File]::ReadAllText($excludeFile)
+            } else {
+                ''
+            }
+            # Replacing any previous block keeps repeated installs and updates idempotent.
+            $blockPattern = [regex]::Escape($beginMarker) + '.*?' + [regex]::Escape($endMarker) + '\r?\n?'
+            $existing = [regex]::Replace($existing, $blockPattern, '', [System.Text.RegularExpressions.RegexOptions]::Singleline)
+            if ($existing.Length -gt 0 -and -not $existing.EndsWith("`n")) {
+                $existing += "`n"
+            }
+            $blockLines = @($beginMarker) + @($excludeEntries | ForEach-Object { '/' + $pathPrefix + $_ }) + @($endMarker)
+            [System.IO.File]::WriteAllText($excludeFile, $existing + ($blockLines -join "`n") + "`n", $utf8NoBom)
+            Write-Output "Module excluded from version control via: $excludeFile"
+        }
+    } finally {
+        Pop-Location
+    }
+}
+
 $verifyScript = Join-Path $targetRoot 'verify-ai-module.ps1'
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $verifyScript -RootPath $targetRoot
 if ($LASTEXITCODE -ne 0) {
@@ -235,4 +357,6 @@ if ($Update) {
 } else {
     Write-Output "Install complete: $targetRoot"
     Write-Output 'Fill .agents/project.md, .agents/context-index.md, and .agents/TODO.md before firmware work.'
+    Write-Output 'The module is excluded from version control, so .agents/ is not covered by git.'
+    Write-Output 'Include it in your own backup, and avoid running "git clean -x" in this project.'
 }

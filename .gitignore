@@ -9,9 +9,8 @@
 /.agents/skills/*/references/*
 !/.agents/skills/*/references/.gitkeep
 
-# 編輯器與本機產物
-/.vscode/
-*.code-workspace
+# 編輯器設定進版控，並以 .agents/templates/ 隨套件帶到新專案。
+# 本機產物
 Thumbs.db
 desktop.ini
 *.bak

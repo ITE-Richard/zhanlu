@@ -21,5 +21,15 @@ description: 新晶片、新板或新控制器韌體 bring-up。適用從權威�
 - 將 console、register dump、電壓、時序與波形對應到完成條件。
 - Build 或 UART 輸出正常不等於整板功能驗證完成。
 
+
+## 量測證據格式
+- 證據置於 `../../resources/evidence/<WORK-ITEM-ID>/`，並在 `../../context-index.md` 登記。
+- LA 匯出以協定解碼後的 CSV 為首選，一列一筆 transaction，可直接推理；raw sample 匯出動輒數百萬列，無法解析。
+- 只匯出出問題的時間窗，例如 reset 後 0 至 50 ms，不整份匯出。
+- 每組量測必須附 `measurement-note.md`，記載 channel 對應到哪個 net、取樣率、觸發條件、板號與當時的韌體版本或 commit。
+- 缺少 channel 對應表時只能報告訊號未知，不得自行推測哪個 channel 是哪個 pin。
+- 取樣率不足會產生假的 glitch；未記載取樣率時，相關結論一律標示為受量測條件限制。
+- 波形截圖只能佐證有無訊號與大致形狀，不可作為精確時序或脈寬的依據。
+
 ## 停止條件
 - 偵測過流、異常溫升、電壓跌落、未知 pin drive 或 reset loop 時停止擴大啟用範圍。

@@ -1,8 +1,9 @@
 {
   "name": "embedded-firmware-ai-collaboration-kit",
-  "version": "4.1.0",
+  "version": "4.2.0",
   "coreVersion": "FIRMWARE-AI-CORE-v4",
-  "archiveName": "firmware-ai-collaboration-kit-v4.1.0.7z",
+  "archiveName": "firmware-ai-collaboration-kit-v4.2.0.7z",
+  "projectKind": "kit-source",
   "requiredSessionFiles": [
     "AGENTS.md",
     ".agents/module.json",
@@ -10,6 +11,66 @@
     ".agents/context-index.md",
     ".agents/TODO.md"
   ],
+  "projectSchema": {
+    "appliesTo": "firmware",
+    "unfilledToken": "待確認",
+    "fields": {
+      "產品類型": {
+        "type": "enum",
+        "values": ["NB"],
+        "required": true
+      },
+      "控制器領域": {
+        "type": "enum",
+        "values": ["EC", "PD", "Keyboard & Lighting"],
+        "multiple": false,
+        "required": true
+      },
+      "目標晶片": {
+        "type": "pattern",
+        "pattern": "^IT[0-9]{4,5}[A-Z]{0,3}$",
+        "example": "IT51526",
+        "required": true
+      },
+      "韌體架構": {
+        "type": "enum",
+        "values": ["bare-metal", "RTOS", "Zephyr", "vendor SDK", "其他"],
+        "required": true
+      },
+      "Build": {
+        "type": "text",
+        "required": true,
+        "noCliValue": "無 CLI，須人工於 IDE 編譯"
+      },
+      "額外唯讀區域": {
+        "type": "text",
+        "required": false,
+        "noneValue": "無"
+      },
+      "唯讀基準": {
+        "type": "path",
+        "requiredRoot": ".agents/reference-projects/",
+        "noneValue": "無",
+        "required": true
+      },
+      "機密或不可提交資料": {
+        "type": "path",
+        "requiredRoot": ".agents/resources/",
+        "noneValue": "無",
+        "required": true
+      },
+      "必要硬體證據": {
+        "type": "text",
+        "required": true
+      }
+    },
+    "workTypeValues": ["啟用", "按需求", "不適用"],
+    "skillRouting": {
+      "EC": ["ec-controller"],
+      "PD": ["pd-controller"],
+      "Keyboard & Lighting": ["keyboard-controller", "lighting-controller"]
+    }
+  },
   "skills": [
     "bug-fix",
     "code-integration",
@@ -26,6 +87,10 @@
   "packageOnlyFiles": [
     "README.md"
   ],
+  "generatedOnceFiles": [
+    ".vscode/settings.json",
+    "*.code-workspace"
+  ],
   "portableFiles": [
     "README.md",
     "AGENTS.md",
@@ -39,6 +104,8 @@
     ".agents/templates/project.md",
     ".agents/templates/context-index.md",
     ".agents/templates/TODO.md",
+    ".agents/templates/vscode-settings.json",
+    ".agents/templates/workspace.code-workspace",
     ".agents/rules/project-context.md",
     ".agents/resources/.gitignore",
     ".agents/reference-projects/.gitignore",

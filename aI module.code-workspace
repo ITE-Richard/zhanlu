@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"chat.fontSize": 18,
+		"chat.fontFamily": "default",
+		"chat.editor.fontSize": 18,
+		"chat.editor.fontFamily": "Cascadia Code, Consolas, monospace",
+		"chat.editor.fontWeight": "default",
+		"chat.editor.lineHeight": 28,
+		"chat.editor.wordWrap": "on"
+	}
+}

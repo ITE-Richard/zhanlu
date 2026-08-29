@@ -13,6 +13,100 @@
 | KIT-005 | 功能開發 | 安裝工具 | `setup-ai-module.ps1` 新增 `-Update` 升級模式，保留專案層三份作用中文件 | KIT-004 | 完成 | 升級只覆寫可攜檔案、作用中文件零改動、無可攜檔案時拒絕升級、乾淨安裝行為不變 |
 | KIT-006 | 功能開發 | 技能 | 新增 `architecture-design` 與 `firmware-code-review` 技能並補齊路由表 | KIT-005 | 完成 | canonical skill、Claude loader、`module.json`、`AGENTS.md` 與 `.agents/README.md` 路由一致且驗證通過 |
 | KIT-007 | 文件／封裝 | 可攜套件 | README 補前置需求、技能清單、升級與故障排除，版本升版並重建 7z | KIT-006 | 完成 | README 內容與實作一致、版本號一致、乾淨安裝與升級安裝實測通過、封裝清單與完整性通過 |
+| KIT-008 | 文件 | 可攜套件 | README 補「套用到新專案要填什麼、資料放哪」的逐步指引 | KIT-007 | 完成 | 三份專案層文件的填寫欄位、資料放置位置與首次啟動驗收皆有明確指引，且母版驗證通過 |
+| KIT-009 | 功能開發 | 專案層 schema | project.md 欄位收斂為 enum／pattern，並由 AI 於啟動確認驗證 | KIT-008 | 完成 | schema 寫入 module.json、範本改寫、AGENTS.md 補欄位驗證與技能自動推導、README 同步 |
+| KIT-010 | 功能開發 | 資料邊界 | 目標專案安裝的模組一律不進版控 | KIT-009 | 完成 | 安裝時寫入目標 .git/info/exclude、verify 以 git ls-files 檢出誤追蹤、AGENTS.md Git 規則改寫、README 補風險警告 |
+
+## KIT-009／KIT-010 完成紀錄
+
+### 實作內容
+- `.agents/module.json` 升版 4.2.0，新增 `projectKind` 與 `projectSchema`（9 個欄位、工作類型 enum、技能路由表）。
+- `.agents/templates/project.md` 由 24 欄收斂為 10 欄，各段補欄位說明區塊，說明與可填值分行以免混淆填寫位置。
+- `.agents/templates/context-index.md` 補 SPEC 章節頁碼要求、基準唯讀標示與量測證據目錄結構。
+- `AGENTS.md` 七處修改：schema 三態檢查、啟動確認新增 `schema=` 欄、基準搜尋結果標示、模組自身唯讀範圍與例外、技能自動推導、Git 規則改寫、安裝規則補 `.git/info/exclude` 與備份提醒。
+- `bug-fix` 與 `hardware-bringup` 技能新增「量測證據格式」章節。
+- `setup-ai-module.ps1`：安裝與升級後把目標 `module.json` 的 `projectKind` 改寫為 `firmware`；新增 generate-once 的編輯器設定；寫入目標 `.git/info/exclude` 標記區塊；升級前備份三份作用中文件。
+- `verify-ai-module.ps1`：新增 `git ls-files` regression，僅在 `projectKind` 不是 `kit-source` 時啟用。
+- 兩份 README 同步改寫，含 PDF 能力更正、LA 證據格式、版控邊界與四則新增故障排除。
+
+### 編輯器設定決議
+- `.vscode/settings.json` 與 `*.code-workspace` 改為隨套件帶到新專案，母版兩者一併進版控（root `.gitignore` 移除對應忽略）。
+- 兩者以 `.agents/templates/vscode-settings.json` 與 `.agents/templates/workspace.code-workspace` 為來源，屬 generate-once：只在目標缺少時產生，永不覆寫，也不納入安裝衝突檢查。
+- 若納入一般可攜檔案，已有 `.vscode/settings.json` 的目標會在衝突檢查階段整個安裝失敗；generate-once 同時滿足「帶到新專案」與「不破壞既有設定」。
+- workspace 檔以目標資料夾名產生，例如目標 `ec-fw` 產生 `ec-fw.code-workspace`。
+
+### 測試期間發現並修正的 bug
+- 非 git 目標安裝失敗：`git rev-parse --is-inside-work-tree 2>$null` 在 `ErrorActionPreference='Stop'` 下，Windows PowerShell 會把原生指令的 stderr 包成 ErrorRecord 而變成終止性錯誤，導致 exit code 1。修正為在該次探測前後暫時改為 `Continue`，兩支腳本同步處理。
+
+### 驗證證據
+- 三支腳本 AST parse：全部通過。
+- `verify-ai-module.ps1 -PackageSource`（母版）：通過，39 個 portable files、1 個 package-only file、11 個 skills；`projectKind=kit-source`，git 追蹤檢查正確跳過。
+- 乾淨 git 目標安裝：exit 0；產生 `.vscode/settings.json` 與 `ec-fw.code-workspace`；`.git/info/exclude` 寫入 10 條規則；目標 `module.json` 的 `projectKind` 改寫為 `firmware`。
+- 版控隱形驗證：`git add -A` 後 staged 檔案 0 筆、`git status --porcelain` 0 行，模組完全不出現在目標 repository。
+- 目標端 verify：exit 0。
+- 負向測試：`git add -f AGENTS.md` 後 verify 以 exit 1 回報「module files are tracked」並附 `git rm -r --cached` 修復指令。
+- 既有 `.vscode/settings.json` 的目標：安裝 exit 0，原檔內容逐位元組不變，僅另外產生 workspace 檔。
+- 非 git 目標：安裝 exit 0，輸出「Target is not a git repository; version-control exclusion skipped.」。
+- `-Update`：exit 0，overwritten 1（`module.json` 因 `projectKind` 差異必然重寫）、unchanged 37；三份作用中文件內容不變，備份目錄含 3 個檔案；`.git/info/exclude` 標記區塊仍為 1 組，未重複堆疊。
+- 升級後目標 `projectKind` 仍為 `firmware`，改寫在升級路徑同樣生效。
+- 二次乾淨安裝：exit 1，列出 41 個既有檔案並提示改用 `-Update`。
+- `pack.ps1`：exit 0，`firmware-ai-collaboration-kit-v4.2.0.7z`，31780 bytes，39 個檔案。
+- `7z t`：Everything is Ok，Files: 39；SHA-256 `50141E60345672B5737410AD8D0628508E137FB51B3B9C959CCBE537B5A3AF49`。
+- 解壓內容與 manifest 比對：expected 39 / actual 39，差異 0；套件內 `projectKind` 維持 `kit-source`，schema 9 個欄位完整。
+
+### 尚未處理
+- `dist/firmware-ai-collaboration-kit-v4.1.0.7z` 仍在，`pack.ps1` 已提示；是否刪除待使用者決定。
+- KIT-010 未決風險中的「work item 歷史備份機制」仍未設計，目前僅以 README 警告與 `-Update` 備份因應。
+
+## KIT-009 已確認設計（2026-08-29 使用者決議）
+- 產品類型 enum：`NB`；擴充其他產品型態以後再說。
+- 控制器領域 enum 單選：`EC`／`PD`／`Keyboard & Lighting`；EC 與 PD 是兩份獨立程式碼，不會同時成立。
+- 目標晶片 pattern：`^IT\d{4,5}[A-Z]{0,3}$`；封裝後綴不強制，詳細規格以 SPEC 為準，型號填錯由使用者負責。
+- 韌體架構保留現有選項，各選項補說明；說明另置區塊，不寫在值那一行以免混淆填寫位置。
+- 專案能力只保留 Build，填可直接執行的指令；Test／Flash／Debug／Static analysis／產出全數刪除。
+- 支援工作類型六項各自 enum：`啟用`／`按需求`／`不適用`；enum 值待使用者 review 後確認。
+- 刪除欄位：目前 work item（TODO.md 為唯一來源）、CPU／核心、Host／外部介面、不可修改區域、啟用技能。
+- 不可修改區域改寫進 AGENTS.md；唯讀範圍為模組共用檔案，可寫例外為專案層三份文件與兩個資料掛載點。
+- 啟用技能由控制器領域自動推導：EC→`ec-controller`，PD→`pd-controller`，Keyboard & Lighting→`keyboard-controller`+`lighting-controller`；`ite-ec-porting` 在 EC 且 work item 為移植時加掛。
+- 唯讀基準強制置於 `.agents/reference-projects/` 之下；機密資料與硬體證據強制置於 `.agents/resources/` 之下。
+- 必要硬體證據只填有無主板與可取得的量測類型；具體檔名與路徑歸 `context-index.md`，避免兩份真相。
+- schema 寫入 `.agents/module.json`：該檔已在 requiredSessionFiles，AI 每個 session 必讀；日後擴充只改 JSON，不動腳本與 AGENTS.md 的通用性宣告。
+- 驗證層由 AI 在啟動確認執行，不讓 verify 腳本解析 project.md 欄位，因此 project.md 維持人類可讀格式。
+- `待確認` 定義為合法的「尚未填寫」值，只列警告不報錯，避免乾淨安裝當場失敗。
+- 啟動確認輸出擴充 `schema=<ok 或不合法欄位清單>`。
+- AGENTS.md 需新增：`.agents/reference-projects/` 的搜尋結果必須標示為唯讀基準，不可與目標專案結果混報。
+- 證據格式規則寫入 `hardware-bringup` 與 `bug-fix` 技能：LA log 以協定解碼後 CSV 為首選、只匯出出問題的時間窗、必附量測筆記記載 channel 對 net 對應、取樣率、觸發條件與韌體版本。
+- SPEC 為整份 PDF：先讀目錄頁建立章節與頁碼對照寫入 `context-index.md`，之後按需讀取指定頁段。
+
+## KIT-010 已確認設計（2026-08-29 使用者決議）
+- 目標工作專案中 `.agents/`、`.claude/` 與 6 個 root 模組檔案（AGENTS.md、CLAUDE.md、GEMINI.md 與三支 ps1）一律不得 commit；母版本身不受影響，照常版控。
+- ignore 規則寫入目標的 `.git/info/exclude`，不新增也不修改目標的 `.gitignore`；理由是 `.gitignore` 會進版控，會在 repo 中暴露模組檔名。
+- `.git/info/exclude` 是 git 預設既有檔案，安裝時以 `git rev-parse --git-common-dir` 定位後附加標記區塊，可正確處理 worktree 與 submodule 的 `.git` 為檔案的情形。
+- 目標不是 git repository 時跳過此步驟。
+- verify 新增 regression：以 `git ls-files` 檢查模組檔案是否已被目標 repo 追蹤，追蹤到即報錯。
+- AGENTS.md 工作流程第 8 條需改寫：commit 只含韌體原始碼變更，不再 stage TODO.md。
+
+## KIT-010 未決風險（使用者要求追蹤）
+- **work item 歷史遺失**：模組不進版控後，TODO.md 的工作歷史、決策與驗證證據只存在本機工作副本，磁碟損壞或重新 clone 即全數遺失。需要另外的備份或匯出機制，尚未設計。
+- **`git clean -xdf` 會無聲刪除整個模組**：該指令專門清除被 ignore 的檔案，會一併刪掉 `.agents/resources/` 內的 SPEC 與證據。README 需明確警告。
+- **團隊共享失效**：`.git/info/exclude` 只對該 clone 有效，其他成員需各自安裝並各自填寫專案事實。目標專案為單人使用或團隊共用尚未確認。
+- **KIT-004 產出可能冗餘**：整個 `.agents/` 被 ignore 後，`.agents/resources/.gitignore` 與 `.agents/reference-projects/.gitignore` 失去作用，保留為第二道防線或移除待決。
+- **build script 掃描污染**：目標專案若以整目錄掃描收集原始碼，可能誤編 `.agents/reference-projects/` 內的基準程式碼。
+
+## KIT-008 現況
+- [x] README 新增〈從母版複製 vs 從套件安裝〉，明確禁止整包複製母版資料夾並給出補救步驟。
+- [x] 〈安裝後必做〉擴充為四個步驟：project.md 逐欄填寫、context-index.md 資料放置對照、TODO.md work item 寫法、首次啟動驗收。
+- [x] 補資料放置對照表，涵蓋原始碼、SPEC、schematic、證據、golden reference 與過大參考樹。
+- [x] 補「AI 讀不了 PDF」「衝突要標權威性」「沒登記等於不存在」三項常見漏失。
+- [x] 補 work item 五種狀態、可驗證完成條件寫法與範例列。
+- [x] 補以驗證碼確認 Agent 真的讀完檔案的驗收方式，以及「套用到新專案」指令。
+- [x] 故障排除新增 `project=` 不符與 `work-item=none` 兩列。
+- [ ] 版本升版與重建 7z：待使用者決定是否併入本次或累積後再發版。
+
+## KIT-008 驗證證據
+- 使用者回報的缺口：README 只有三行「安裝後必做」，未說明複製到新專案時要改哪些檔案、資訊寫在哪、檔案放哪。
+- 母版原有文件確認：`setup-ai-module.ps1` 只自動填專案識別、repository 名稱、載入驗證碼、索引版次與索引驗證碼五個範本欄位，其餘欄位一律維持 `待確認`；README 先前未說明這件事，使用者無從得知還要補什麼。
+- `verify-ai-module.ps1 -PackageSource`：通過，37 個 portable files、1 個 package-only file、11 個 skills。
 
 ## KIT-007 現況
 - [x] README 補前置需求（PowerShell 5.1、7-Zip、VSCode 重新載入視窗）。
