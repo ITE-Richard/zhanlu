@@ -9,23 +9,56 @@
 ## 前置需求
 
 - Windows 與 Windows PowerShell 5.1 以上；三支腳本都以 `powershell.exe` 執行。
-- 7-Zip：解壓本套件需要；要重新打包 (`pack.ps1`) 時同樣需要 `7z.exe` 在 PATH 或安裝於預設路徑。
-- 目標專案建議已在 Git 版控下。安裝器會把整個模組排除在該專案的版控之外，這一步需要 `git` 在 PATH 上；沒有 `git` 時安裝仍會完成，但會改為印出需要手動加入的忽略項目。
+- `git`：從 GitHub 取得模組需要；安裝器把整個模組排除在目標專案版控之外時同樣需要它在 PATH 上。沒有 `git` 時安裝仍會完成，但會改為印出需要手動加入的忽略項目。
+- 7-Zip：只有走壓縮套件路線才需要；要重新打包 (`pack.ps1`) 時需要 `7z.exe` 在 PATH 或安裝於預設路徑。
+- 目標專案建議已在 Git 版控下。
 - 安裝完成後若 VSCode 已經開著目標專案，請重新載入視窗，工具才會重新掃描規則與 skill。
 
-## 從母版複製 vs 從套件安裝
+## 取得模組的三種方式
 
-模組母版 repository 本身帶著一份作用中的專案層（`.agents/project.md`、`.agents/context-index.md`、`.agents/TODO.md`），那是母版自己的專案事實與工作進度。**不要把母版資料夾整包複製成新專案**，否則新專案的 AI 會讀到母版的專案識別與母版的 work item，並在錯誤前提下工作。
+> **關鍵觀念：取得模組 ≠ 安裝模組。**
+>
+> 三個工具都只掃描 **repository 根目錄**的 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 與 `.agents/`。把模組放在子資料夾（例如 clone 出來的 `zhanlu/`）**不會被載入**，一定要再跑一次 `setup-ai-module.ps1`，由它把共用檔案送到根目錄並產生專案層。
 
 | 你手上的東西 | 正確做法 |
 |---|---|
+| GitHub repository | `git clone` 到目標專案內或機器上任一位置，再執行 `setup-ai-module.ps1 -TargetPath <目標>` |
 | 壓縮套件 `zhanlu-v4.3.0.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-ai-module.ps1` |
 | 模組母版資料夾 | 直接在母版執行 `setup-ai-module.ps1 -TargetPath <目標>`，或先用 `pack.ps1` 產生套件 |
 | 目標專案已裝過舊版模組 | 改用 `-Update`，見〈升級既有專案〉 |
 
-安裝器只複製 `.agents/module.json` 白名單內的共用檔案，並由 `.agents/templates/` 產生全新的專案層，所以不會把母版或其他專案的事實帶進來。若已經手動整包複製過，請先刪掉目標專案內的 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`.agents/`、`.claude/`、`dist/` 與三支腳本，再重新安裝。
+安裝器只複製 `.agents/module.json` 白名單內的共用檔案，並由 `.agents/templates/` 產生全新的專案層，所以不會把母版或其他專案的事實帶進來。
 
-## 最短安裝流程
+**不要把母版資料夾整包複製成新專案。** 母版 repository 本身帶著一份作用中的專案層（`.agents/project.md`、`.agents/context-index.md`、`.agents/TODO.md`），那是母版自己的專案事實與工作進度；整包複製會讓新專案的 AI 讀到母版的專案識別與母版的 work item，在錯誤前提下工作。若已經手動整包複製過，請先刪掉目標專案內的 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`.agents/`、`.claude/`、`dist/` 與三支腳本，再重新安裝。
+
+## 安裝流程 A：從 GitHub clone（建議）
+
+把模組 clone 進目標專案，再對上一層執行安裝器。clone 出來的 `zhanlu/` 之後就是這個專案的升級來源，`git pull` 後直接 `-Update` 即可。
+
+```powershell
+# 1. 取得模組
+cd D:\work\target-firmware-project
+git clone https://github.com/ITE-Richard/zhanlu.git
+
+# 2. 安裝到專案根目錄
+cd zhanlu
+powershell -ExecutionPolicy Bypass -File .\setup-ai-module.ps1 -TargetPath ..
+
+# 3. 驗收版控隔離
+cd ..
+git status --porcelain
+```
+
+第 3 步預期只會看到一行 `?? zhanlu/`。**這是正常的**：安裝器只排除它自己送進根目錄的檔案，clone 出來的 `zhanlu/` 不歸它管，要自己補一行：
+
+```powershell
+Add-Content .git\info\exclude "`n# zhanlu 模組 clone，獨立 repo，不進本專案版控`n/zhanlu/"
+git status --porcelain    # 這次應該完全空白
+```
+
+不想讓 clone 留在專案內，就改 clone 到專案外（例如 `D:\tools\zhanlu`），用 `-TargetPath` 指向目標專案，第 3 步的 `git status` 就會直接是空的。代價是升級時要自己記得那份 clone 放在哪。
+
+## 安裝流程 B：從壓縮套件
 
 不要直接把壓縮檔覆蓋解壓到目標 repository。請先解壓到暫存或相鄰資料夾，再執行安裝器；安裝器會在寫入前檢查所有衝突。
 
@@ -39,7 +72,19 @@ powershell -ExecutionPolicy Bypass -File "$kitDir\setup-ai-module.ps1" `
   -TargetPath $target
 ```
 
+## 兩種流程共通
+
 安裝成功時會顯示 `Install complete`，並自動完成結構驗證。若目標專案已存在任何將安裝的 AI 規則或 skill，安裝器會在寫入前停止，不會局部覆蓋。
+
+安裝後可以確認排除規則確實寫入了：
+
+```powershell
+Get-Content .git\info\exclude | Select-String "zhanlu"
+```
+
+應該看到 `# >>> zhanlu >>>` 標記區塊，裡面列著 `/AGENTS.md`、`/CLAUDE.md`、`/GEMINI.md`、`/.agents/`、`/.claude/`、三支 `.ps1` 與編輯器設定等條目。
+
+> 若目標專案的 `.gitignore` 本來就有 `.*` 之類的規則，`git status` 對 `.agents/`、`.claude/` 沒有鑑別力——就算排除沒寫成功也看不出來。這時要靠上面這行 `Select-String`，或觀察根目錄的 `AGENTS.md` 與三支 `.ps1` 有沒有冒出來（`.*` 蓋不到它們）。
 
 ## 安裝後必做：讓 AI 知道專案與任務
 
@@ -194,7 +239,22 @@ LA log 要用**協定解碼後的 CSV**，一列一筆 transaction；raw sample 
 
 ## 升級既有專案
 
-已經裝過本模組的專案，不要重新執行乾淨安裝，改用 `-Update`：
+已經裝過本模組的專案，不要重新執行乾淨安裝，改用 `-Update`。
+
+若你用流程 A 把 `zhanlu/` clone 在專案內，升級就是兩行：
+
+```powershell
+cd D:\work\target-firmware-project\zhanlu
+git pull
+
+# 先看計畫，不寫入任何檔案
+powershell -ExecutionPolicy Bypass -File .\setup-ai-module.ps1 -TargetPath .. -Update -WhatIf
+
+# 確認後實際升級
+powershell -ExecutionPolicy Bypass -File .\setup-ai-module.ps1 -TargetPath .. -Update
+```
+
+從壓縮套件或母版升級則是：
 
 ```powershell
 # 先看計畫，不寫入任何檔案
@@ -213,6 +273,8 @@ powershell -ExecutionPolicy Bypass -File "$kitDir\setup-ai-module.ps1" `
 新版白名單移除的檔案會列為 stale，預設只回報；確認後加上 `-RemoveStale` 才刪除，並一併清掉變空的目錄。
 
 若曾在目標專案手改過 `AGENTS.md` 或任一 skill，升級會覆蓋這些修改。共用規則的修改應該回到母版，不要留在單一專案。
+
+> 流程 A 裝完後，專案內會有**兩份**模組：根目錄那份是 AI 實際讀的，`zhanlu/` 那份只當升級來源，內容相同是正常的。改規則要回母版改，改根目錄那份會在下次 `-Update` 被蓋掉。
 
 ## 一台機器多個專案
 
@@ -234,7 +296,7 @@ powershell -ExecutionPolicy Bypass -File "$kitDir\setup-ai-module.ps1" `
 - `pack.ps1`：由白名單重建 7z 套件。
 - `.agents/README.md`：安裝後保留在目標專案內的完整維護說明。
 
-本檔 `README.md` 只提供壓縮套件的第一層使用說明，不會覆蓋或複製成目標 repository 的根目錄 README。
+本檔 `README.md` 是 GitHub repository 與壓縮套件的第一層使用說明，標示為 package-only，不會覆蓋或複製成目標 repository 的根目錄 README。
 
 ## 可以交由 AI 協助的內容
 
@@ -257,6 +319,8 @@ AI 不得猜測 pin、polarity、register value、timing、reset sequence、powe
 
 `verify-ai-module.ps1` 會用 `git ls-files` 檢查模組檔案有沒有被誤追蹤，有的話直接報錯並附上修復指令。
 
+**一個例外：clone 出來的 `zhanlu/` 不在排除範圍內。** 安裝器只排除自己送進根目錄的檔案，它無從得知你把模組 clone 到哪、那個目錄該不該保留，所以走流程 A 時要自己補一行 `/zhanlu/` 到 `.git/info/exclude`，否則它會一直出現在 `git status`，也可能被當成 embedded repository 誤加進 index。
+
 > **兩個要注意的後果**
 >
 > - **不要在工作專案跑 `git clean -x`。** 這個指令專門刪除被忽略的檔案，會連同 `.agents/` 一起清掉——包含 `TODO.md` 的工作歷史與 `.agents/resources/` 裡的 SPEC 和量測證據，而且沒有確認提示。
@@ -269,12 +333,15 @@ AI 不得猜測 pin、polarity、register value、timing、reset sequence、powe
 | 症狀 | 檢查方式 |
 |---|---|
 | Agent 沒有輸出啟動確認 | 確認 VSCode 開的是 repository 根目錄，且根目錄看得到 `AGENTS.md` 與 `.agents/`；直接輸入「工作開始」強制重讀五個檔案 |
+| clone 完了但 AI 完全不知道有規則 | 只 clone 沒安裝。根目錄必須有 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 與 `.agents/`；放在 `zhanlu/` 子資料夾不會被任何工具載入，補跑 `setup-ai-module.ps1 -TargetPath ..` |
+| AI 讀到的專案識別是 `zhanlu-source` | 讀到的是 `zhanlu/` 子資料夾裡的母版專案層，不是你的專案層；確認根目錄已完成安裝，並把 `/zhanlu/` 加進 `.git/info/exclude` |
+| `git status` 出現 `?? zhanlu/` | 預期行為，安裝器不負責排除 clone 目錄；手動加 `/zhanlu/` 到 `.git/info/exclude` |
 | 安裝後工具仍看不到規則或 skill | 重新載入 VSCode 視窗；工具通常在啟動時才掃描專案規則 |
 | Claude Code 少了某個 skill | 確認 `.claude/skills/<名稱>/SKILL.md` 存在，且 frontmatter 的 `name` 與資料夾同名 |
 | 某個 skill 突然消失或行為不對 | 可能與工具內建 skill 撞名；改用帶專案前綴的名稱，並同步更新 `module.json` 與兩處 SKILL.md |
 | `Target files already exist; nothing was written` | 目標已經裝過模組，改用 `-Update` |
 | `No installed module found` | 目標沒裝過模組，拿掉 `-Update` 做乾淨安裝 |
-| 啟動確認的 `project=` 不是自己的專案 | 目標專案是整包複製來的，帶著別人的專案層；依〈從母版複製 vs 從套件安裝〉清掉後重新安裝 |
+| 啟動確認的 `project=` 不是自己的專案 | 目標專案是整包複製來的，帶著別人的專案層；依〈取得模組的三種方式〉清掉後重新安裝 |
 | 啟動確認的 `work-item=none` | `.agents/TODO.md` 還沒填 work item，或檔頭的當前 work item 沒對齊 |
 | 啟動確認的 `schema=不合法` | 欄位值不在 `.agents/module.json` 的 `projectSchema` 允許範圍內；錯誤訊息會點名是哪幾欄 |
 | `module files are tracked by this repository` | 模組被誤加入版控；照錯誤訊息執行 `git rm -r --cached`，檔案不會被刪除 |

@@ -1,7 +1,7 @@
 # TODO.md — 模組母版工作追蹤
 
 - 專案識別：`zhanlu-source`
-- 當前 work item：`none`
+- 當前 work item：`KIT-012`
 
 ## Work items
 | ID | 工作類型 | 功能域 | 項目 | 相依 | 狀態 | 完成條件 |
@@ -17,6 +17,41 @@
 | KIT-009 | 功能開發 | 專案層 schema | project.md 欄位收斂為 enum／pattern，並由 AI 於啟動確認驗證 | KIT-008 | 完成 | schema 寫入 module.json、範本改寫、AGENTS.md 補欄位驗證與技能自動推導、README 同步 |
 | KIT-010 | 功能開發 | 資料邊界 | 目標專案安裝的模組一律不進版控 | KIT-009 | 完成 | 安裝時寫入目標 .git/info/exclude、verify 以 git ls-files 檢出誤追蹤、AGENTS.md Git 規則改寫、README 補風險警告 |
 | KIT-011 | 重構 | 模組識別 | 模組更名為湛盧 zhanlu，五層名稱統一並處理既有安裝遷移 | KIT-010 | 完成 | 名稱五層一致、舊標記可自動清除、舊版套件升級不洩漏、封裝與驗證通過 |
+| KIT-012 | 文件 | 可攜套件 | README 補 GitHub clone 安裝通道，明確區分「取得模組」與「安裝模組」 | KIT-011 | 完成 | clone 流程、`zhanlu/` 排除缺口、驗收方式與故障排除皆有指引，母版驗證通過 |
+
+## KIT-012 完成紀錄
+
+### 問題來源（2026-08-30 使用者實測）
+- 使用者把模組 `git clone` 進目標專案，得到 `<專案>/zhanlu/`，三個工具開啟時完全沒載入規則。
+- 根因：三工具都只掃描 repository 根目錄的 `AGENTS.md`／`CLAUDE.md`／`GEMINI.md`／`.agents/`，子資料夾不在掃描範圍。**取得模組不等於安裝模組**，clone 之後仍需執行 `setup-ai-module.ps1`。
+- 次要風險：若 AI 真的讀到 `zhanlu/CLAUDE.md`，其相對 import 會解析到母版自己的專案層，讓 AI 拿到 `專案識別：zhanlu-source` 而在錯誤前提下工作。
+- 文件缺口：README 原本只涵蓋壓縮套件與母版資料夾兩種來源，GitHub clone 這條通道完全沒寫。
+
+### 實作內容
+- 〈前置需求〉：`git` 由「安裝器排除版控需要」提升為取得模組的必要條件；7-Zip 降級為僅壓縮套件路線需要。
+- 〈從母版複製 vs 從套件安裝〉更名為〈取得模組的三種方式〉，開頭加「取得模組 ≠ 安裝模組」的關鍵觀念區塊，表格新增 GitHub repository 一列。
+- 〈最短安裝流程〉拆為〈安裝流程 A：從 GitHub clone（建議）〉、〈安裝流程 B：從壓縮套件〉與〈兩種流程共通〉三節。流程 A 收錄使用者實測的四步驟，含 `git status` 驗收與 `?? zhanlu/` 的預期輸出。
+- 〈升級既有專案〉補 clone 內建升級來源的兩行流程（`git pull` + `-Update -TargetPath ..`），並警告專案內會有兩份模組、改規則要回母版。
+- 〈目標專案不會 commit 到模組〉補明安裝器不負責排除 clone 目錄的理由與後果。
+- 〈故障排除〉新增三列：只 clone 沒安裝、AI 讀到 `zhanlu-source`、`git status` 出現 `?? zhanlu/`；並同步更名後的章節交叉引用。
+- 〈套件包含內容〉的 README 定位補上 GitHub repository 第一層說明。
+
+### 設計決議
+- `zhanlu/` 不由安裝器自動寫入排除：安裝器無從得知使用者把模組 clone 到哪、那個目錄該不該保留，自動猜測會誤刪或誤忽略使用者自有目錄。改為在 README 明確要求手動補一行，並列為預期輸出而非錯誤。
+- clone 放專案內或專案外都支援，README 兩者並陳；放專案內的好處是升級來源自帶，代價是多一行排除設定。
+
+### 驗證證據
+- 使用者於 `ite-ec-app-Clevo-clevo-zhanlu`（`clevo` branch，899 tracked files，安裝前工作樹與 `.git/info/exclude` 均確認乾淨）實測流程 A。
+- 安裝前 `setup-ai-module.ps1 -WhatIf`：exit 0，零衝突。
+- 安裝結果：三個入口檔與母版逐位元組一致；canonical skills 11／Claude loaders 11；`projectKind` 由 `kit-source` 改寫為 `firmware`；專案層三份文件由範本產生，專案識別 `ite-ec-app-clevo-clevo-zhanlu`，驗證碼 `PROJECT-2C7AAAD6`／`CONTEXT-8FFE4AB2` 為新產生而非母版的碼。
+- `.git/info/exclude`：`# >>> zhanlu >>>` 標記區塊 1 組、10 條規則，未堆疊；目標 `.gitignore`（17 B）未被動過。
+- 目標端 `verify-ai-module.ps1`：exit 0，`zhanlu 4.3.0`／`ZHANLU-CORE-v4`／39 portable／11 skills。
+- 安裝後 `git status --porcelain` 僅 `?? zhanlu/`，與 README 新寫的預期輸出一致。
+- 母版 `verify-ai-module.ps1 -PackageSource`：exit 0，39 portable files／1 package-only file／11 skills。
+
+### 尚未處理
+- 版本未升版、7z 未重建：本次只改 package-only 的 `README.md`，不影響 `portableFiles` 內容，是否併入下次發版待使用者決定。
+- `.agents/README.md` 第 49 行仍只描述 7z 解壓路線，未提 clone；該檔是安裝後留在目標專案的維護說明，是否同步待使用者決定。
 
 ## KIT-011 完成紀錄
 
