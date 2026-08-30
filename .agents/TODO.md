@@ -20,6 +20,30 @@
 | KIT-012 | 文件 | 可攜套件 | README 補 GitHub clone 安裝通道，明確區分「取得模組」與「安裝模組」 | KIT-011 | 完成 | clone 流程、`zhanlu/` 排除缺口、驗收方式與故障排除皆有指引，母版驗證通過 |
 | KIT-013 | Bug fix／重構 | 安裝工具 | 安裝器自動排除 kit 目錄、修正 exclude 區塊堆疊、兩支腳本更名為 zhanlu | KIT-012 | 完成 | 區塊永遠一組、kit 在目標內自動排除且在目標外不多寫規則、更名可由舊版升級遷移、封裝與驗證通過 |
 | KIT-014 | 功能開發／文件 | 維護工具 | 新增 `clean-backups.ps1` 清除專案層備份，README 補「升級會動到什麼」對照 | KIT-013 | 完成 | 只刪 `.agents/.backup-*`、非安裝目錄拒絕執行、`-WhatIf`／`-KeepLatest` 正確、升級不動使用者資料有實測佐證、封裝與驗證通過 |
+| KIT-015 | Bug fix | 維護工具 | `clean-backups.ps1` 從 clone 目錄執行時找錯 `.agents/` | KIT-014 | 完成 | 從 clone 執行會往上定位到已安裝專案並印出位置、指向 kit 時明確拒絕、既有選項行為不變 |
+
+## KIT-015 完成紀錄
+
+### 問題（2026-08-30 使用者回報）
+- 使用者在 `D:\...\ite-ec-app-Clevo-clevo-zhanlu\zhanlu>` 執行 `.\clean-backups.ps1`，得到 `No project-layer backups found in ...\zhanlu\.agents`，但備份其實在上一層的專案 `.agents/` 底下。
+- 根因：預設 `-TargetPath` 取自 `$PSScriptRoot`，而流程 A 建議把 kit clone 進專案內，腳本因此落在 clone 裡；clone 本身帶著完整的 `.agents/module.json`，KIT-014 的防呆只檢查該檔存在與否，於是不但沒攔下來，還安靜地報「沒有備份」——最糟的失敗形式：看起來成功，實際找錯地方。
+
+### 修法
+- 新增 `Test-InstalledProject`：以 `module.json` 的 `projectKind` 區分。kit source 為 `kit-source`，`setup-zhanlu.ps1` 會把已安裝副本改寫為 `firmware`，這是兩者唯一可靠的差別，光看檔案存在不足以判定。
+- 未指定 `-TargetPath` 且當前位置不是已安裝專案時，沿父目錄往上找最近的已安裝專案；找到就採用並印出 `Ran from the kit directory; using the installed project at <path>`，不靜默切換。
+- 指向 kit source（無論是自動解析或明確指定）一律 throw，訊息說明那是 kit 而非已安裝專案。
+- 明確指定 `-TargetPath` 時不做往上搜尋，使用者指定什麼就是什麼。
+
+### 驗證證據
+- AST parse：通過。
+- 母版 `verify-zhanlu.ps1 -PackageSource`：exit 0，40 portable／1 package-only／11 skills。
+- A. 從 clone 執行（重現案例）：正確往上定位到專案，列出 2 份備份，`-WhatIf` 零刪除。
+- B. 從專案根執行：行為不變，同樣列出 2 份。
+- C. 在母版執行（kit source 且上層無專案）：exit 1，訊息為 kit source 拒絕。
+- D. 明確 `-TargetPath ./zhanlu` 指向 clone：exit 1，同上。
+- E. 從 clone 執行 `-KeepLatest 1 -Confirm:$false`：刪 1 留 1，選項行為不受影響。
+- 版本升至 `4.5.1`；`pack.ps1` exit 0，`zhanlu-v4.5.1.7z`，36489 bytes，40 個檔案；`7z t` Everything is Ok，SHA-256 `7693CE900BB5FFBB2A19CAC94E3CAC6556C313A647CA8DAB241923231546A822`。
+- `dist/` 的 v4.4.0 與 v4.5.0 舊封裝已刪除，只保留當前版本。
 
 ## KIT-014 完成紀錄
 

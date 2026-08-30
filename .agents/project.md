@@ -19,7 +19,7 @@
 - Build：不適用。
 - Test：`powershell -ExecutionPolicy Bypass -File .\verify-zhanlu.ps1 -PackageSource`
 - Package：`powershell -ExecutionPolicy Bypass -File .\pack.ps1`
-- 產出：`./dist/zhanlu-v4.5.0.7z`
+- 產出：`./dist/zhanlu-v4.5.1.7z`
 
 ## 支援工作類型
 - Bug fix、程式碼整合、功能開發、韌體移植、硬體 bring-up、重構與程式碼審查。

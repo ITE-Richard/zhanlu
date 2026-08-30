@@ -1,4 +1,4 @@
-# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.5.0
+# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.5.1
 
 > 湛盧為十大名劍之首，仁道之劍：持劍者無道，劍自去之。本模組同理——不守規則、不留證據、靠猜作答，它就不為你所用。
 
@@ -23,7 +23,7 @@
 | 你手上的東西 | 正確做法 |
 |---|---|
 | GitHub repository | `git clone` 到目標專案內或機器上任一位置，再執行 `setup-zhanlu.ps1 -TargetPath <目標>` |
-| 壓縮套件 `zhanlu-v4.5.0.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-zhanlu.ps1` |
+| 壓縮套件 `zhanlu-v4.5.1.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-zhanlu.ps1` |
 | 模組母版資料夾 | 直接在母版執行 `setup-zhanlu.ps1 -TargetPath <目標>`，或先用 `pack.ps1` 產生套件 |
 | 目標專案已裝過舊版模組 | 改用 `-Update`，見〈升級既有專案〉 |
 
@@ -60,8 +60,8 @@ git status --porcelain
 不要直接把壓縮檔覆蓋解壓到目標 repository。請先解壓到暫存或相鄰資料夾，再執行安裝器；安裝器會在寫入前檢查所有衝突。
 
 ```powershell
-$archive = 'D:\transfer\zhanlu-v4.5.0.7z'
-$kitDir = 'D:\transfer\zhanlu-v4.5.0'
+$archive = 'D:\transfer\zhanlu-v4.5.1.7z'
+$kitDir = 'D:\transfer\zhanlu-v4.5.1'
 $target = 'D:\work\target-firmware-project'
 
 7z x $archive "-o$kitDir"
@@ -289,7 +289,7 @@ powershell -ExecutionPolicy Bypass -File .\clean-backups.ps1              # 刪�
 powershell -ExecutionPolicy Bypass -File .\clean-backups.ps1 -KeepLatest 1
 ```
 
-它只會刪 `.agents/` 底下名為 `.backup-*` 的目錄，找不到 `.agents/module.json` 就直接拒絕執行，也不會跟著 junction 或 symlink 刪到別的地方去。
+從專案根目錄或 `zhanlu/` clone 裡跑都可以：在 clone 裡執行時它會往上找到真正的安裝位置，並印出用的是哪個專案。它只會刪 `.agents/` 底下名為 `.backup-*` 的目錄，指到 kit 而非已安裝專案時直接拒絕執行，也不會跟著 junction 或 symlink 刪到別的地方去。
 
 新版白名單移除的檔案會列為 stale，預設只回報；確認後加上 `-RemoveStale` 才刪除，並一併清掉變空的目錄。
 
@@ -357,8 +357,8 @@ AI 不得猜測 pin、polarity、register value、timing、reset sequence、powe
 | Agent 沒有輸出啟動確認 | 確認 VSCode 開的是 repository 根目錄，且根目錄看得到 `AGENTS.md` 與 `.agents/`；直接輸入「工作開始」強制重讀五個檔案 |
 | clone 完了但 AI 完全不知道有規則 | 只 clone 沒安裝。根目錄必須有 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 與 `.agents/`；放在 `zhanlu/` 子資料夾不會被任何工具載入，補跑 `setup-zhanlu.ps1 -TargetPath ..` |
 | AI 讀到的專案識別是 `zhanlu-source` | 讀到的是 `zhanlu/` 子資料夾裡的母版專案層，不是你的專案層；確認根目錄已完成安裝，並把 `/zhanlu/` 加進 `.git/info/exclude` |
-| `git status` 出現 `?? zhanlu/` | 該 clone 是在 v4.3.0 或更早版本安裝的，當時安裝器不排除 kit 目錄；以 v4.5.0 以上重跑 `-Update` 即可補上，或手動加 `/zhanlu/` 到 `.git/info/exclude` |
-| `.git/info/exclude` 有多組 `>>> zhanlu >>>` 區塊 | v4.3.0 及更早版本的區塊清除規則在 CRLF 環境失效，每次安裝或升級都會疊一組；以 v4.5.0 以上重跑 `-Update` 會收斂回一組，多餘的舊區塊可手動刪除 |
+| `git status` 出現 `?? zhanlu/` | 該 clone 是在 v4.3.0 或更早版本安裝的，當時安裝器不排除 kit 目錄；以 v4.5.1 以上重跑 `-Update` 即可補上，或手動加 `/zhanlu/` 到 `.git/info/exclude` |
+| `.git/info/exclude` 有多組 `>>> zhanlu >>>` 區塊 | v4.3.0 及更早版本的區塊清除規則在 CRLF 環境失效，每次安裝或升級都會疊一組；以 v4.5.1 以上重跑 `-Update` 會收斂回一組，多餘的舊區塊可手動刪除 |
 | 安裝後工具仍看不到規則或 skill | 重新載入 VSCode 視窗；工具通常在啟動時才掃描專案規則 |
 | Claude Code 少了某個 skill | 確認 `.claude/skills/<名稱>/SKILL.md` 存在，且 frontmatter 的 `name` 與資料夾同名 |
 | 某個 skill 突然消失或行為不對 | 可能與工具內建 skill 撞名；改用帶專案前綴的名稱，並同步更新 `module.json` 與兩處 SKILL.md |

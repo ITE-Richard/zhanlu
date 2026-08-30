@@ -50,8 +50,8 @@ clean-backups.ps1
 建議先把 7z 解壓到暫存資料夾，再從暫存資料夾執行安裝器；不要直接覆蓋目標 repository。
 
 ```powershell
-7z x .\zhanlu-v4.5.0.7z -o'.\zhanlu-v4.5.0'
-powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.5.0\setup-zhanlu.ps1 `
+7z x .\zhanlu-v4.5.1.7z -o'.\zhanlu-v4.5.1'
+powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.5.1\setup-zhanlu.ps1 `
   -TargetPath 'D:\path\to\target-project'
 ```
 

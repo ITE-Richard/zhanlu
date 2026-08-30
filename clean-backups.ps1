@@ -16,7 +16,8 @@
     plan without deleting, and -KeepLatest to retain the newest backups.
 .PARAMETER TargetPath
     Root directory of the project to clean. Defaults to the directory holding this script,
-    which is the project root for an installed module.
+    which is the project root for an installed module. Run from a kit directory that sits
+    inside the project instead, and the nearest installed project above it is used.
 .PARAMETER KeepLatest
     Number of newest backups to keep. Defaults to 0, which removes all of them.
 .EXAMPLE
@@ -36,9 +37,26 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# A kit source carries its own .agents/module.json, so "the manifest exists" is not enough
+# to prove a directory is an installed project. setup-zhanlu.ps1 rewrites projectKind to
+# firmware on the installed copy, which is what actually separates the two.
+function Test-InstalledProject {
+    param([string]$Path)
+    $manifestPath = Join-Path (Join-Path $Path '.agents') 'module.json'
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { return $false }
+    try {
+        $probe = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    } catch {
+        return $false
+    }
+    return ($probe.projectKind -ne 'kit-source')
+}
+
+$explicitTarget = -not [string]::IsNullOrWhiteSpace($TargetPath)
+
 # Windows PowerShell leaves $PSScriptRoot empty while binding parameter defaults, so the
 # fallback has to happen in the body or "powershell.exe -File" passes an empty path.
-if ([string]::IsNullOrWhiteSpace($TargetPath)) {
+if (-not $explicitTarget) {
     $TargetPath = $PSScriptRoot
 }
 
@@ -47,10 +65,31 @@ if (-not (Test-Path -LiteralPath $TargetPath -PathType Container)) {
 }
 $targetRoot = (Resolve-Path -LiteralPath $TargetPath).Path.TrimEnd('\', '/')
 
+# The recommended layout clones the kit into the project it serves, so running this script
+# from the clone lands on the kit's own .agents instead of the project's. Walking up from
+# there finds the installation the backups actually belong to.
+if (-not $explicitTarget -and -not (Test-InstalledProject $targetRoot)) {
+    $probeRoot = $targetRoot
+    $found = ''
+    while (-not $found) {
+        $parent = Split-Path -Parent $probeRoot
+        if (-not $parent -or $parent -eq $probeRoot) { break }
+        if (Test-InstalledProject $parent) { $found = $parent }
+        $probeRoot = $parent
+    }
+    if ($found) {
+        Write-Output "Ran from the kit directory; using the installed project at $found"
+        $targetRoot = $found
+    }
+}
+
 # Refusing outside an installation keeps a mistyped path from walking an unrelated tree.
 $agentsDirectory = Join-Path $targetRoot '.agents'
 if (-not (Test-Path -LiteralPath (Join-Path $agentsDirectory 'module.json') -PathType Leaf)) {
     throw "No installed module found at $targetRoot (.agents/module.json is missing)."
+}
+if (-not (Test-InstalledProject $targetRoot)) {
+    throw "$targetRoot is a kit source, not an installed project; it has no project-layer backups. Point -TargetPath at the project that was installed into."
 }
 
 # Timestamps are yyyyMMdd-HHmmss, so name order is chronological order.
