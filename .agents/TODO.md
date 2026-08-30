@@ -21,6 +21,42 @@
 | KIT-013 | Bug fix／重構 | 安裝工具 | 安裝器自動排除 kit 目錄、修正 exclude 區塊堆疊、兩支腳本更名為 zhanlu | KIT-012 | 完成 | 區塊永遠一組、kit 在目標內自動排除且在目標外不多寫規則、更名可由舊版升級遷移、封裝與驗證通過 |
 | KIT-014 | 功能開發／文件 | 維護工具 | 新增 `clean-backups.ps1` 清除專案層備份，README 補「升級會動到什麼」對照 | KIT-013 | 完成 | 只刪 `.agents/.backup-*`、非安裝目錄拒絕執行、`-WhatIf`／`-KeepLatest` 正確、升級不動使用者資料有實測佐證、封裝與驗證通過 |
 | KIT-015 | Bug fix | 維護工具 | `clean-backups.ps1` 從 clone 目錄執行時找錯 `.agents/` | KIT-014 | 完成 | 從 clone 執行會往上定位到已安裝專案並印出位置、指向 kit 時明確拒絕、既有選項行為不變 |
+| KIT-016 | 功能開發 | 維護工具 | 新增 `update-zhanlu.ps1`，把 `git pull` + `-Update` 收成一行 | KIT-015 | 完成 | 免參數即可執行、自動定位專案、pull 失敗中止、非自有 clone 不誤 pull、選項可透傳、封裝與驗證通過 |
+
+## KIT-016 完成紀錄
+
+### 需求（2026-08-30 使用者）
+- 希望升級也能像 `clean-backups.ps1` 一樣，做成免參數直接執行的腳本。
+
+### 設計
+- `update-zhanlu.ps1` 依序做兩件事：kit 目錄 `git pull --ff-only`，再對已安裝專案執行 `setup-zhanlu.ps1 -Update`。
+- 專案定位沿用 KIT-015 的 `Test-InstalledProject`（以 `projectKind` 區分 kit 與已安裝專案），從 kit 目錄往上找最近的一層。
+- 預設**執行** `git pull`：腳本存在的意義就是「一行完成升級」，不 pull 只省下一個參數，價值不足。`-NoPull` 供離線或已手動 pull 時使用。
+- `-RemoveStale` 維持 opt-in，與 `setup-zhanlu.ps1` 的既有語意一致，不因包一層而變成預設破壞性行為。
+- `-WhatIf` 同時作用於 `git pull` 與底層安裝器。
+- `git pull` 失敗直接 throw：拿舊 kit 繼續會裝回同一版，使用者卻以為升級成功，屬於必須中止而非可忽略的錯誤。
+
+### 測試期間發現並修正的 bug
+- **可能誤 pull 使用者的韌體專案**：原本只用 `git rev-parse --is-inside-work-tree` 判斷 kit 是否為 clone。但 7z 解壓出來、放在專案 repo 底下的 kit「確實位於一個 work tree 內」——那是**目標專案的** work tree，於是 `git pull` 會落在使用者的韌體 repo 上。測試中因該 repo 無 upstream 而失敗，若有 tracking branch 就會真的拉動使用者的專案。
+- 修法：改要求 `git rev-parse --show-toplevel` 等於 kit 目錄本身，即 kit 必須是自有 repository 的根；否則印出原因並跳過 pull。路徑比對前正規化斜線並忽略大小寫。
+
+### 版本
+- 升至 `4.6.0`：新增可攜檔案，`portableFiles` 由 40 增為 41。
+
+### 驗證證據
+- 五支腳本 AST parse：全部通過。
+- 母版 `verify-zhanlu.ps1 -PackageSource`：exit 0，41 portable／1 package-only／11 skills。
+- 測試環境：建立 bare upstream + 專案內 clone，並讓 upstream 領先一個 commit，模擬真實升級。
+- `-WhatIf`：印出 kit 與專案路徑，`git pull` 僅 WhatIf（kit 仍停在舊 commit），安裝器輸出完整計畫，專案 `AGENTS.md` 位元組數不變。
+- 實際執行：一行完成 `cf0b449..38c5261` fast-forward、`-Update`、專案層備份、exclude 更新與驗證；升級後的 `AGENTS.md` 正確落到專案（10211→10223 bytes），`git status` 全空。
+- `-NoPull`：印出跳過訊息並完成 update。
+- pull 失敗（clone 有分歧 commit，`--ff-only` 失敗）：exit 1，且 `Update plan` 出現次數為 0，確認安裝器未被執行。
+- 非自有 clone（7z 式 kit 放在專案 repo 內）：印出 `Kit is not its own git clone (it sits inside ...)`，跳過 pull 後正常完成 update；目標專案 repo 的 HEAD 與 `git status` 均未變動。
+- 真實 clone regression：修正後仍正確 fast-forward（`38c5261`→`aa5d4a9`）。
+- 在母版執行（上層無已安裝專案）：exit 1，訊息指示改用 `-TargetPath` 或先做乾淨安裝。
+- `-RemoveStale` 透傳：安裝器計畫正常產生。
+- `pack.ps1`：exit 0，`zhanlu-v4.6.0.7z`，38248 bytes，41 個檔案；`7z t` Everything is Ok，SHA-256 `5986B22FB1E399DB45B97EC00B8633BBF02B6EE49B24AB27E4B0A8F0F483613A`。
+- `dist/` 舊封裝已刪除，只保留當前版本。
 
 ## KIT-015 完成紀錄
 
