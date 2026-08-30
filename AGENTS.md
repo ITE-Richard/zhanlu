@@ -108,15 +108,15 @@
 - 未經使用者明確要求，不 amend、不 push、不做破壞性 Git 操作。
 
 ## 可攜與安裝規則
-- 不直接整包覆蓋目標 repository；使用 `setup-ai-module.ps1` 做檔案衝突檢查與專案層初始化。
-- 可攜內容以 `.agents/module.json` 的 `portableFiles` 白名單為準，由 `pack.ps1` 實作並由 `verify-ai-module.ps1` 驗證。
+- 不直接整包覆蓋目標 repository；使用 `setup-zhanlu.ps1` 做檔案衝突檢查與專案層初始化。
+- 可攜內容以 `.agents/module.json` 的 `portableFiles` 白名單為準，由 `pack.ps1` 實作並由 `verify-zhanlu.ps1` 驗證。
 - 母版作用中的 `project.md`、`context-index.md`、`TODO.md`、SPEC、reference 與證據不得進入可攜套件。
 - 目標專案必須由 `.agents/templates/` 產生新的專案層，並填入新的專案識別與載入驗證碼。
 - 安裝到目標專案時，模組檔案的忽略規則寫入該 repository 的 `.git/info/exclude`，不新增也不修改目標的 `.gitignore`，避免在版控中暴露模組檔名。
 - `.agents/` 未進目標專案版控，工作歷史與證據只存在本機工作副本；需提醒使用者納入日常備份，並避免在目標專案執行 `git clean -x`。
 
 ## 溝通指令
-- 「套用到新專案」：先執行或依照 `setup-ai-module.ps1` 盤點衝突，建立專案層，分列可自動查得與需使用者提供的資料，再執行驗證。
+- 「套用到新專案」：先執行或依照 `setup-zhanlu.ps1` 盤點衝突，建立專案層，分列可自動查得與需使用者提供的資料，再執行驗證。
 - 「工作開始」：重新完成 Session 載入確認，選定 work item 與技能，載入索引指向的必要證據後再工作。
 
 ## 規範版本

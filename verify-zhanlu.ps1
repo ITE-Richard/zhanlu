@@ -132,7 +132,7 @@ if ($manifest) {
 
 # An installed module must stay out of the target repository's version control. The kit
 # source is the opposite case: there the module is meant to be tracked, so it is skipped.
-# setup-ai-module.ps1 rewrites projectKind to 'firmware' in every installed copy.
+# setup-zhanlu.ps1 rewrites projectKind to 'firmware' in every installed copy.
 if ($manifest -and $manifest.projectKind -ne 'kit-source') {
     $gitCommand = Get-Command git -ErrorAction SilentlyContinue
     if ($gitCommand) {
@@ -156,8 +156,8 @@ if ($manifest -and $manifest.projectKind -ne 'kit-source') {
                     'CLAUDE.md',
                     'GEMINI.md',
                     'pack.ps1',
-                    'setup-ai-module.ps1',
-                    'verify-ai-module.ps1'
+                    'setup-zhanlu.ps1',
+                    'verify-zhanlu.ps1'
                 )
                 $trackedFiles = @(& $gitCommand.Source ls-files -- $moduleGitPaths)
                 if ($LASTEXITCODE -eq 0 -and $trackedFiles.Count -gt 0) {

@@ -30,7 +30,7 @@ foreach ($relativePath in $portableFiles) {
     }
 }
 
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'verify-ai-module.ps1') -RootPath $root -PackageSource
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'verify-zhanlu.ps1') -RootPath $root -PackageSource
 if ($LASTEXITCODE -ne 0) {
     throw "Module validation failed with exit code $LASTEXITCODE. Packaging stopped."
 }

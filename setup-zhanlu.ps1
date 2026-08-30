@@ -14,7 +14,9 @@
 
     Both modes keep the module out of the target repository by writing an exclusion block
     to .git/info/exclude. The target's own .gitignore is never created or modified, so the
-    module never becomes visible in the target project's history.
+    module never becomes visible in the target project's history. When the kit directory
+    itself sits inside the target project - the usual result of cloning the module into the
+    project it serves - that directory is excluded as well.
 .PARAMETER TargetPath
     Root directory of the target project.
 .PARAMETER Update
@@ -23,9 +25,9 @@
     Update mode only. Delete files that the previously installed manifest listed but the
     current manifest no longer contains. Without this switch such files are only reported.
 .EXAMPLE
-    .\setup-ai-module.ps1 -TargetPath D:\work\my-firmware
+    .\setup-zhanlu.ps1 -TargetPath D:\work\my-firmware
 .EXAMPLE
-    .\setup-ai-module.ps1 -TargetPath D:\work\my-firmware -Update -WhatIf
+    .\setup-zhanlu.ps1 -TargetPath D:\work\my-firmware -Update -WhatIf
 #>
 [CmdletBinding(SupportsShouldProcess)]
 param(
@@ -54,6 +56,17 @@ $targetRoot = (Resolve-Path -LiteralPath $TargetPath).Path.TrimEnd('\', '/')
 $resolvedSourceRoot = (Resolve-Path -LiteralPath $sourceRoot).Path.TrimEnd('\', '/')
 if ($targetRoot -eq $resolvedSourceRoot) {
     throw 'The source kit and target project must be different directories.'
+}
+
+# Cloning the module into the project it will serve leaves the clone inside the target
+# work tree, where the target repository would otherwise see it as an untracked embedded
+# repository. Its location is derived from the script's own path rather than guessed, so
+# it can be excluded alongside the files the installer writes. A kit that lives outside
+# the target yields nothing here and needs no rule.
+$sourceInsideTarget = ''
+$targetRootWithSeparator = $targetRoot + [System.IO.Path]::DirectorySeparatorChar
+if ($resolvedSourceRoot.StartsWith($targetRootWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)) {
+    $sourceInsideTarget = $resolvedSourceRoot.Substring($targetRootWithSeparator.Length).Replace('\', '/') + '/'
 }
 
 $portableFiles = @($manifest.portableFiles)
@@ -91,8 +104,8 @@ $moduleGitPaths = @(
     'CLAUDE.md',
     'GEMINI.md',
     'pack.ps1',
-    'setup-ai-module.ps1',
-    'verify-ai-module.ps1'
+    'setup-zhanlu.ps1',
+    'verify-zhanlu.ps1'
 )
 
 $missing = foreach ($relativePath in $portableFiles) {
@@ -285,6 +298,9 @@ foreach ($entry in $generateOnce) {
 }
 
 $excludeEntries = @($moduleGitPaths) + @($generatedFiles)
+if ($sourceInsideTarget) {
+    $excludeEntries += $sourceInsideTarget
+}
 $gitCommand = Get-Command git -ErrorAction SilentlyContinue
 if (-not $gitCommand) {
     Write-Warning 'git was not found; the module was NOT excluded from version control.'
@@ -340,16 +356,22 @@ if (-not $gitCommand) {
             # never un-ignores a generate-once file that this installer created earlier.
             $preservedEntries = @()
             foreach ($markerName in $markerNames) {
-                $blockPattern = [regex]::Escape("# >>> $markerName >>>") + '.*?' + [regex]::Escape("# <<< $markerName <<<") + '
-?
-?'
+                $blockPattern = [regex]::Escape("# >>> $markerName >>>") + '.*?' + [regex]::Escape("# <<< $markerName <<<") + '\r?\n?'
                 foreach ($match in [regex]::Matches($existing, $blockPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
-                    $preservedEntries += @($match.Value -split '
-?
-' | Where-Object { $_.StartsWith('/') })
+                    $preservedEntries += @($match.Value -split '\r?\n' | Where-Object { $_.StartsWith('/') })
                 }
                 $existing = [regex]::Replace($existing, $blockPattern, '', [System.Text.RegularExpressions.RegexOptions]::Singleline)
             }
+            # Carried-over entries name files this installer wrote in an earlier run. One
+            # that no longer exists was renamed or dropped from the manifest, so keeping
+            # its rule would leave the block growing dead lines at every module rename.
+            $preservedEntries = @($preservedEntries | Where-Object {
+                $candidate = $_.TrimStart('/')
+                if ($pathPrefix -and $candidate.StartsWith($pathPrefix)) {
+                    $candidate = $candidate.Substring($pathPrefix.Length)
+                }
+                Test-Path -LiteralPath (Join-Path $targetRoot $candidate.TrimEnd('/'))
+            })
             if ($existing.Length -gt 0 -and -not $existing.EndsWith("`n")) {
                 $existing += "`n"
             }
@@ -358,13 +380,16 @@ if (-not $gitCommand) {
             $blockLines = @($beginMarker) + $patterns + @($endMarker)
             [System.IO.File]::WriteAllText($excludeFile, $existing + ($blockLines -join "`n") + "`n", $utf8NoBom)
             Write-Output "Module excluded from version control via: $excludeFile"
+            if ($sourceInsideTarget) {
+                Write-Output "Module source directory is inside the target and was excluded too: /$pathPrefix$sourceInsideTarget"
+            }
         }
     } finally {
         Pop-Location
     }
 }
 
-$verifyScript = Join-Path $targetRoot 'verify-ai-module.ps1'
+$verifyScript = Join-Path $targetRoot 'verify-zhanlu.ps1'
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $verifyScript -RootPath $targetRoot
 if ($LASTEXITCODE -ne 0) {
     $phase = if ($Update) { 'Module files were updated' } else { 'Module files were copied' }

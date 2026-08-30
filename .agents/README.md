@@ -28,8 +28,8 @@ CLAUDE.md
 GEMINI.md
 README.md                 # 壓縮套件入口說明；不複製到目標專案根目錄
 pack.ps1
-setup-ai-module.ps1
-verify-ai-module.ps1
+setup-zhanlu.ps1
+verify-zhanlu.ps1
 .agents/
   module.json
   README.md
@@ -49,8 +49,8 @@ verify-ai-module.ps1
 建議先把 7z 解壓到暫存資料夾，再從暫存資料夾執行安裝器；不要直接覆蓋目標 repository。
 
 ```powershell
-7z x .\zhanlu-v4.3.0.7z -o'.\zhanlu-v4.3.0'
-powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.3.0\setup-ai-module.ps1 `
+7z x .\zhanlu-v4.4.0.7z -o'.\zhanlu-v4.4.0'
+powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.4.0\setup-zhanlu.ps1 `
   -TargetPath 'D:\path\to\target-project'
 ```
 
@@ -59,7 +59,7 @@ powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.3.0\setup-ai-module.ps1 `
 1. 依 `.agents/module.json` 白名單複製通用檔案；`packageOnlyFiles` 只留在壓縮套件，不複製到目標專案。
 2. 由範本建立新的 `.agents/project.md`、`.agents/context-index.md` 與 `.agents/TODO.md`。
 3. 寫入目標資料夾名稱及新的驗證碼。
-4. 執行 `verify-ai-module.ps1`。
+4. 執行 `verify-zhanlu.ps1`。
 
 接著由維護者填寫三份作用中文件：
 
@@ -71,15 +71,15 @@ powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.3.0\setup-ai-module.ps1 `
 
 ## 升級已安裝的模組
 
-`setup-ai-module.ps1` 的預設模式只做全新安裝，任何目標檔案已存在就會中止。要把既有專案更新到新版模組，改用 `-Update`：
+`setup-zhanlu.ps1` 的預設模式只做全新安裝，任何目標檔案已存在就會中止。要把既有專案更新到新版模組，改用 `-Update`：
 
 ```powershell
 # 先看計畫，不寫入任何檔案
-powershell -ExecutionPolicy Bypass -File .\setup-ai-module.ps1 `
+powershell -ExecutionPolicy Bypass -File .\setup-zhanlu.ps1 `
   -TargetPath 'D:\path\to\target-project' -Update -WhatIf
 
 # 確認後實際升級
-powershell -ExecutionPolicy Bypass -File .\setup-ai-module.ps1 `
+powershell -ExecutionPolicy Bypass -File .\setup-zhanlu.ps1 `
   -TargetPath 'D:\path\to\target-project' -Update
 ```
 
@@ -89,7 +89,7 @@ powershell -ExecutionPolicy Bypass -File .\setup-ai-module.ps1 `
 - 絕不寫入 `.agents/project.md`、`.agents/context-index.md` 與 `.agents/TODO.md`；專案事實、資料索引與工作進度完整保留。
 - 目標沒有 `.agents/module.json`，或三份作用中文件不齊全時直接拒絕，避免把半套模組蓋成看似完整。
 - 會比對目標已安裝的舊 `module.json`，列出新版白名單已移除的檔案；預設只回報，加上 `-RemoveStale` 才刪除。
-- 升級結束會自動執行 `verify-ai-module.ps1`。
+- 升級結束會自動執行 `verify-zhanlu.ps1`。
 
 若曾在目標專案手改過 `AGENTS.md` 或任一 skill，升級會覆蓋這些修改。共用規則的修改應該回到母版，不要留在單一專案。
 
@@ -105,8 +105,8 @@ powershell -ExecutionPolicy Bypass -File .\setup-ai-module.ps1 `
 /CLAUDE.md
 /GEMINI.md
 /pack.ps1
-/setup-ai-module.ps1
-/verify-ai-module.ps1
+/setup-zhanlu.ps1
+/verify-zhanlu.ps1
 # <<< zhanlu <<<
 ```
 
@@ -148,7 +148,7 @@ skill 是方法，不承載專案事實；所有具體型號、路徑、register
 驗證目前資料夾：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\verify-ai-module.ps1 -PackageSource
+powershell -ExecutionPolicy Bypass -File .\verify-zhanlu.ps1 -PackageSource
 ```
 
 建立可攜套件：

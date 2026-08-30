@@ -1,8 +1,8 @@
 {
   "name": "zhanlu",
-  "version": "4.3.0",
+  "version": "4.4.0",
   "coreVersion": "ZHANLU-CORE-v4",
-  "archiveName": "zhanlu-v4.3.0.7z",
+  "archiveName": "zhanlu-v4.4.0.7z",
   "legacyMarkerNames": [
     "embedded-firmware-ai-collaboration-kit"
   ],
@@ -100,8 +100,8 @@
     "CLAUDE.md",
     "GEMINI.md",
     "pack.ps1",
-    "setup-ai-module.ps1",
-    "verify-ai-module.ps1",
+    "setup-zhanlu.ps1",
+    "verify-zhanlu.ps1",
     ".agents/module.json",
     ".agents/README.md",
     ".agents/templates/project.md",

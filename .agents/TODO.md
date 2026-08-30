@@ -1,7 +1,7 @@
 # TODO.md — 模組母版工作追蹤
 
 - 專案識別：`zhanlu-source`
-- 當前 work item：`none`
+- 當前 work item：`KIT-013`
 
 ## Work items
 | ID | 工作類型 | 功能域 | 項目 | 相依 | 狀態 | 完成條件 |
@@ -18,6 +18,52 @@
 | KIT-010 | 功能開發 | 資料邊界 | 目標專案安裝的模組一律不進版控 | KIT-009 | 完成 | 安裝時寫入目標 .git/info/exclude、verify 以 git ls-files 檢出誤追蹤、AGENTS.md Git 規則改寫、README 補風險警告 |
 | KIT-011 | 重構 | 模組識別 | 模組更名為湛盧 zhanlu，五層名稱統一並處理既有安裝遷移 | KIT-010 | 完成 | 名稱五層一致、舊標記可自動清除、舊版套件升級不洩漏、封裝與驗證通過 |
 | KIT-012 | 文件 | 可攜套件 | README 補 GitHub clone 安裝通道，明確區分「取得模組」與「安裝模組」 | KIT-011 | 完成 | clone 流程、`zhanlu/` 排除缺口、驗收方式與故障排除皆有指引，母版驗證通過 |
+| KIT-013 | Bug fix／重構 | 安裝工具 | 安裝器自動排除 kit 目錄、修正 exclude 區塊堆疊、兩支腳本更名為 zhanlu | KIT-012 | 完成 | 區塊永遠一組、kit 在目標內自動排除且在目標外不多寫規則、更名可由舊版升級遷移、封裝與驗證通過 |
+
+## KIT-013 完成紀錄
+
+### 需求（2026-08-30 使用者決議）
+- 安裝時就要把 clone 進目標專案的 kit 目錄一併排除，不接受 KIT-012「列為預期輸出、要使用者手動補一行」的作法。
+- 兩支腳本名稱中的 `ai-module` 改為 `zhanlu`，與 KIT-011 的單一字根收斂一致。
+
+### 修正一：安裝器自動排除 kit 目錄
+- 先前判斷「安裝器無從得知 kit clone 在哪」是錯的：kit 位置就是 `$PSScriptRoot`，屬於可推導事實而非猜測。
+- 實作：比對 `$resolvedSourceRoot` 是否位於 `$targetRoot` 之下（`OrdinalIgnoreCase`），是則取相對路徑加尾斜線寫入排除項。
+- kit 在目標之外時不產生任何規則，行為與先前一致；`tools/zhanlu` 這類較深的位置也會寫出正確相對路徑。
+- 目標為 repository 子目錄時，該條目與其他條目一樣套用 `--show-prefix` 前綴。
+
+### 修正二：exclude 區塊堆疊（v4.3.0 起的既有 bug）
+- **症狀**：每次安裝或升級都在 `.git/info/exclude` 追加一組 `# >>> zhanlu >>>` 區塊，舊區塊不會被移除；被帶進新區塊的 generate-once 條目也一併遺失。
+- **根因**：清除舊區塊的 regex 尾段寫成跨行的單引號字串，其內容取決於 `setup-*.ps1` 自身的行尾。該檔在 `core.autocrlf=true` 下工作副本為 CRLF（401 行對 401 個 CR），字串因此成為 `CR LF ? CR LF ?`，regex 語意變成「必須有兩個 CR」。而 exclude 檔是由 `-join "\`n"` 寫出的純 LF，永遠比對不到，`Matches` 恆為 0，`Replace` 不動任何內容。
+- **為何 KIT-011 沒抓到**：當時只在單次寫入後檢查區塊數，沒有做「安裝後再升級」的連續驗證。
+- **修法**：改用顯式 regex escape `'\r?\n?'` 與 `'\r?\n'`（字面反斜線），與原始檔行尾脫鉤。
+- **附帶修正**：carried-over 條目改為過濾掉目標中已不存在的路徑，否則更名後 `/setup-ai-module.ps1` 這類死條目會永久留在區塊內。
+
+### 修正三：腳本更名
+- `setup-ai-module.ps1` → `setup-zhanlu.ps1`，`verify-ai-module.ps1` → `verify-zhanlu.ps1`；`pack.ps1` 名稱不含 `ai-module`，不動。
+- 同步更新 `module.json` 白名單、`moduleGitPaths`、`pack.ps1`、`AGENTS.md`、兩份 README、`project.md`、`context-index.md`。
+- `TODO.md` 的歷史紀錄依 KIT-011 決議不改寫：那些行記錄的是當時確實執行過的指令。
+- 舊版安裝的遷移由既有 stale 機制承擔：舊名稱在新 manifest 中不存在，`-Update -RemoveStale` 會刪除；未加該旗標則只回報。
+
+### 版本
+- 升至 `4.4.0`：portableFiles 內容變更且含檔名更動，屬 release 級。
+
+### 驗證證據
+- 三支腳本 AST parse：全部通過。
+- 母版 `verify-zhanlu.ps1 -PackageSource`：exit 0，39 portable／1 package-only／11 skills。
+- **堆疊 bug 重現**：以 HEAD（v4.3.0）安裝後再 `-Update`，`.git/info/exclude` 出現 2 組區塊，第二組遺失 `/.vscode/settings.json` 與 `/<專案>.code-workspace`；`git status` 另有 `?? zhanlu/`。
+- **修正後**：install → 1 組；`-Update` ×2 → 仍 1 組；generate-once 條目保留；`git status` 全空。
+- **kit 在目標內（`zhanlu/`）**：寫出 `/zhanlu/`，`git status` 全空。
+- **kit 在較深位置（`tools/zhanlu/`）**：寫出 `/tools/zhanlu/`，升級後仍 1 組，`git status` 全空。
+- **kit 在目標外（regression）**：不輸出 kit 目錄訊息、不多寫任何規則，`git status` 全空。
+- **v4.3.0 → v4.4.0 真實遷移**：先以 v4.3.0 製造 2 組堆疊區塊與舊腳本名，再以 v4.4.0 `-Update -RemoveStale`；結果 new 2／overwritten 4／unchanged 32，stale 正確列出並刪除兩支舊腳本，區塊收斂為 1 組，死條目 `/setup-ai-module.ps1`、`/verify-ai-module.ps1` 已濾除，`/zhanlu/` 已加入，`git status` 全空。
+- 目標端 `verify-zhanlu.ps1`：exit 0。負向測試 `git add -f AGENTS.md` 後以 exit 1 回報 module files are tracked，修復指令已使用新腳本名。
+- `pack.ps1`：exit 0，`zhanlu-v4.4.0.7z`，34262 bytes，39 個檔案。
+- `7z t`：Everything is Ok，Files: 39；SHA-256 `8A8EDD01B9D44B2CA8F542E6D310AEA566EB18DFB24BA69872A1F49E55ADCDFE`。
+
+### 尚未處理
+- 使用者的 `ite-ec-app-Clevo-clevo-zhanlu` 仍是 v4.3.0 安裝，需 `git pull` 後以 `-Update -RemoveStale` 遷移；在那之前該專案 `git status` 會持續出現 `?? zhanlu/`。
+- `.agents/README.md` 的安裝章節仍只描述 7z 解壓路線，未提 clone 通道（KIT-012 遺留）。
 
 ## KIT-012 完成紀錄
 

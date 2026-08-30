@@ -1,4 +1,4 @@
-# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.3.0
+# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.4.0
 
 > 湛盧為十大名劍之首，仁道之劍：持劍者無道，劍自去之。本模組同理——不守規則、不留證據、靠猜作答，它就不為你所用。
 
@@ -18,13 +18,13 @@
 
 > **關鍵觀念：取得模組 ≠ 安裝模組。**
 >
-> 三個工具都只掃描 **repository 根目錄**的 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 與 `.agents/`。把模組放在子資料夾（例如 clone 出來的 `zhanlu/`）**不會被載入**，一定要再跑一次 `setup-ai-module.ps1`，由它把共用檔案送到根目錄並產生專案層。
+> 三個工具都只掃描 **repository 根目錄**的 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 與 `.agents/`。把模組放在子資料夾（例如 clone 出來的 `zhanlu/`）**不會被載入**，一定要再跑一次 `setup-zhanlu.ps1`，由它把共用檔案送到根目錄並產生專案層。
 
 | 你手上的東西 | 正確做法 |
 |---|---|
-| GitHub repository | `git clone` 到目標專案內或機器上任一位置，再執行 `setup-ai-module.ps1 -TargetPath <目標>` |
-| 壓縮套件 `zhanlu-v4.3.0.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-ai-module.ps1` |
-| 模組母版資料夾 | 直接在母版執行 `setup-ai-module.ps1 -TargetPath <目標>`，或先用 `pack.ps1` 產生套件 |
+| GitHub repository | `git clone` 到目標專案內或機器上任一位置，再執行 `setup-zhanlu.ps1 -TargetPath <目標>` |
+| 壓縮套件 `zhanlu-v4.4.0.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-zhanlu.ps1` |
+| 模組母版資料夾 | 直接在母版執行 `setup-zhanlu.ps1 -TargetPath <目標>`，或先用 `pack.ps1` 產生套件 |
 | 目標專案已裝過舊版模組 | 改用 `-Update`，見〈升級既有專案〉 |
 
 安裝器只複製 `.agents/module.json` 白名單內的共用檔案，並由 `.agents/templates/` 產生全新的專案層，所以不會把母版或其他專案的事實帶進來。
@@ -42,33 +42,30 @@ git clone https://github.com/ITE-Richard/zhanlu.git
 
 # 2. 安裝到專案根目錄
 cd zhanlu
-powershell -ExecutionPolicy Bypass -File .\setup-ai-module.ps1 -TargetPath ..
+powershell -ExecutionPolicy Bypass -File .\setup-zhanlu.ps1 -TargetPath ..
 
 # 3. 驗收版控隔離
 cd ..
 git status --porcelain
 ```
 
-第 3 步預期只會看到一行 `?? zhanlu/`。**這是正常的**：安裝器只排除它自己送進根目錄的檔案，clone 出來的 `zhanlu/` 不歸它管，要自己補一行：
+第 3 步預期**完全空白**。安裝器發現自己就位在目標專案底下時，會把自己所在的那層目錄一併寫進排除規則，所以 clone 出來的 `zhanlu/` 不會出現在 `git status`，也不會被目標 repository 當成 embedded repository 收進 index。
 
-```powershell
-Add-Content .git\info\exclude "`n# zhanlu 模組 clone，獨立 repo，不進本專案版控`n/zhanlu/"
-git status --porcelain    # 這次應該完全空白
-```
+這個判斷取自安裝器自己的路徑，不是猜的：kit 在目標之外就不會產生這條規則，clone 到 `tools\zhanlu` 這種更深的位置也會寫出正確的相對路徑。
 
-不想讓 clone 留在專案內，就改 clone 到專案外（例如 `D:\tools\zhanlu`），用 `-TargetPath` 指向目標專案，第 3 步的 `git status` 就會直接是空的。代價是升級時要自己記得那份 clone 放在哪。
+不想讓 clone 留在專案內，就改 clone 到專案外（例如 `D:\tools\zhanlu`），用 `-TargetPath` 指向目標專案即可。代價是升級時要自己記得那份 clone 放在哪。
 
 ## 安裝流程 B：從壓縮套件
 
 不要直接把壓縮檔覆蓋解壓到目標 repository。請先解壓到暫存或相鄰資料夾，再執行安裝器；安裝器會在寫入前檢查所有衝突。
 
 ```powershell
-$archive = 'D:\transfer\zhanlu-v4.3.0.7z'
-$kitDir = 'D:\transfer\zhanlu-v4.3.0'
+$archive = 'D:\transfer\zhanlu-v4.4.0.7z'
+$kitDir = 'D:\transfer\zhanlu-v4.4.0'
 $target = 'D:\work\target-firmware-project'
 
 7z x $archive "-o$kitDir"
-powershell -ExecutionPolicy Bypass -File "$kitDir\setup-ai-module.ps1" `
+powershell -ExecutionPolicy Bypass -File "$kitDir\setup-zhanlu.ps1" `
   -TargetPath $target
 ```
 
@@ -82,7 +79,7 @@ powershell -ExecutionPolicy Bypass -File "$kitDir\setup-ai-module.ps1" `
 Get-Content .git\info\exclude | Select-String "zhanlu"
 ```
 
-應該看到 `# >>> zhanlu >>>` 標記區塊，裡面列著 `/AGENTS.md`、`/CLAUDE.md`、`/GEMINI.md`、`/.agents/`、`/.claude/`、三支 `.ps1` 與編輯器設定等條目。
+應該看到 **一組** `# >>> zhanlu >>>` 標記區塊，裡面列著 `/AGENTS.md`、`/CLAUDE.md`、`/GEMINI.md`、`/.agents/`、`/.claude/`、三支 `.ps1` 與編輯器設定等條目；走流程 A 時還會多一條 clone 目錄（例如 `/zhanlu/`）。重複安裝或升級都只會改寫這一組，不會愈疊愈多。
 
 > 若目標專案的 `.gitignore` 本來就有 `.*` 之類的規則，`git status` 對 `.agents/`、`.claude/` 沒有鑑別力——就算排除沒寫成功也看不出來。這時要靠上面這行 `Select-String`，或觀察根目錄的 `AGENTS.md` 與三支 `.ps1` 有沒有冒出來（`.*` 蓋不到它們）。
 
@@ -248,21 +245,21 @@ cd D:\work\target-firmware-project\zhanlu
 git pull
 
 # 先看計畫，不寫入任何檔案
-powershell -ExecutionPolicy Bypass -File .\setup-ai-module.ps1 -TargetPath .. -Update -WhatIf
+powershell -ExecutionPolicy Bypass -File .\setup-zhanlu.ps1 -TargetPath .. -Update -WhatIf
 
 # 確認後實際升級
-powershell -ExecutionPolicy Bypass -File .\setup-ai-module.ps1 -TargetPath .. -Update
+powershell -ExecutionPolicy Bypass -File .\setup-zhanlu.ps1 -TargetPath .. -Update
 ```
 
 從壓縮套件或母版升級則是：
 
 ```powershell
 # 先看計畫，不寫入任何檔案
-powershell -ExecutionPolicy Bypass -File "$kitDir\setup-ai-module.ps1" `
+powershell -ExecutionPolicy Bypass -File "$kitDir\setup-zhanlu.ps1" `
   -TargetPath $target -Update -WhatIf
 
 # 確認後實際升級
-powershell -ExecutionPolicy Bypass -File "$kitDir\setup-ai-module.ps1" `
+powershell -ExecutionPolicy Bypass -File "$kitDir\setup-zhanlu.ps1" `
   -TargetPath $target -Update
 ```
 
@@ -291,8 +288,8 @@ powershell -ExecutionPolicy Bypass -File "$kitDir\setup-ai-module.ps1" `
 - `.agents/skills/`：11 個 canonical skills。
 - `.claude/skills/`：11 個 Claude skill 載入器。
 - `.agents/resources/`、`.agents/reference-projects/`：資料掛載點，各自帶一份 `.gitignore`。
-- `setup-ai-module.ps1`：安全安裝、專案層初始化與 `-Update` 升級。
-- `verify-ai-module.ps1`：結構、引用與 skill 驗證。
+- `setup-zhanlu.ps1`：安全安裝、專案層初始化與 `-Update` 升級。
+- `verify-zhanlu.ps1`：結構、引用與 skill 驗證。
 - `pack.ps1`：由白名單重建 7z 套件。
 - `.agents/README.md`：安裝後保留在目標專案內的完整維護說明。
 
@@ -317,9 +314,9 @@ AI 不得猜測 pin、polarity、register value、timing、reset sequence、powe
 
 忽略規則寫在目標 repository 的 `.git/info/exclude`，**不會新增也不會修改目標專案的 `.gitignore`**。`.git/` 不屬於工作樹，不會被 commit、不會被 push，所以模組的檔名不會出現在該專案的歷史裡。安裝器產生的 `.vscode/settings.json` 與 workspace 檔同樣列入排除；如果目標本來就有自己的 `.vscode/settings.json`，安裝器會原封不動保留它。
 
-`verify-ai-module.ps1` 會用 `git ls-files` 檢查模組檔案有沒有被誤追蹤，有的話直接報錯並附上修復指令。
+`verify-zhanlu.ps1` 會用 `git ls-files` 檢查模組檔案有沒有被誤追蹤，有的話直接報錯並附上修復指令。
 
-**一個例外：clone 出來的 `zhanlu/` 不在排除範圍內。** 安裝器只排除自己送進根目錄的檔案，它無從得知你把模組 clone 到哪、那個目錄該不該保留，所以走流程 A 時要自己補一行 `/zhanlu/` 到 `.git/info/exclude`，否則它會一直出現在 `git status`，也可能被當成 embedded repository 誤加進 index。
+**kit 目錄本身也在排除範圍內。** 安裝器會比對自己所在的位置與目標專案根目錄，只要 kit 位在目標底下（clone 進專案就是這種情形），就把那層目錄的相對路徑一併寫進排除區塊。位置取自安裝器自己的路徑而非猜測，所以 kit 在目標之外時不會多寫任何規則，也不會誤忽略你自有的目錄。
 
 > **兩個要注意的後果**
 >
@@ -333,9 +330,10 @@ AI 不得猜測 pin、polarity、register value、timing、reset sequence、powe
 | 症狀 | 檢查方式 |
 |---|---|
 | Agent 沒有輸出啟動確認 | 確認 VSCode 開的是 repository 根目錄，且根目錄看得到 `AGENTS.md` 與 `.agents/`；直接輸入「工作開始」強制重讀五個檔案 |
-| clone 完了但 AI 完全不知道有規則 | 只 clone 沒安裝。根目錄必須有 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 與 `.agents/`；放在 `zhanlu/` 子資料夾不會被任何工具載入，補跑 `setup-ai-module.ps1 -TargetPath ..` |
+| clone 完了但 AI 完全不知道有規則 | 只 clone 沒安裝。根目錄必須有 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 與 `.agents/`；放在 `zhanlu/` 子資料夾不會被任何工具載入，補跑 `setup-zhanlu.ps1 -TargetPath ..` |
 | AI 讀到的專案識別是 `zhanlu-source` | 讀到的是 `zhanlu/` 子資料夾裡的母版專案層，不是你的專案層；確認根目錄已完成安裝，並把 `/zhanlu/` 加進 `.git/info/exclude` |
-| `git status` 出現 `?? zhanlu/` | 預期行為，安裝器不負責排除 clone 目錄；手動加 `/zhanlu/` 到 `.git/info/exclude` |
+| `git status` 出現 `?? zhanlu/` | 該 clone 是在 v4.3.0 或更早版本安裝的，當時安裝器不排除 kit 目錄；以 v4.4.0 以上重跑 `-Update` 即可補上，或手動加 `/zhanlu/` 到 `.git/info/exclude` |
+| `.git/info/exclude` 有多組 `>>> zhanlu >>>` 區塊 | v4.3.0 及更早版本的區塊清除規則在 CRLF 環境失效，每次安裝或升級都會疊一組；以 v4.4.0 以上重跑 `-Update` 會收斂回一組，多餘的舊區塊可手動刪除 |
 | 安裝後工具仍看不到規則或 skill | 重新載入 VSCode 視窗；工具通常在啟動時才掃描專案規則 |
 | Claude Code 少了某個 skill | 確認 `.claude/skills/<名稱>/SKILL.md` 存在，且 frontmatter 的 `name` 與資料夾同名 |
 | 某個 skill 突然消失或行為不對 | 可能與工具內建 skill 撞名；改用帶專案前綴的名稱，並同步更新 `module.json` 與兩處 SKILL.md |
@@ -356,7 +354,7 @@ AI 不得猜測 pin、polarity、register value、timing、reset sequence、powe
 在目標專案根目錄執行：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\verify-ai-module.ps1
+powershell -ExecutionPolicy Bypass -File .\verify-zhanlu.ps1
 ```
 
 若要維護並重新打包本套件，請參考 `.agents/README.md`。
