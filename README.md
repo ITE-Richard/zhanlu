@@ -1,4 +1,4 @@
-# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.4.0
+# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.5.0
 
 > 湛盧為十大名劍之首，仁道之劍：持劍者無道，劍自去之。本模組同理——不守規則、不留證據、靠猜作答，它就不為你所用。
 
@@ -8,7 +8,7 @@
 
 ## 前置需求
 
-- Windows 與 Windows PowerShell 5.1 以上；三支腳本都以 `powershell.exe` 執行。
+- Windows 與 Windows PowerShell 5.1 以上；四支腳本都以 `powershell.exe` 執行。
 - `git`：從 GitHub 取得模組需要；安裝器把整個模組排除在目標專案版控之外時同樣需要它在 PATH 上。沒有 `git` 時安裝仍會完成，但會改為印出需要手動加入的忽略項目。
 - 7-Zip：只有走壓縮套件路線才需要；要重新打包 (`pack.ps1`) 時需要 `7z.exe` 在 PATH 或安裝於預設路徑。
 - 目標專案建議已在 Git 版控下。
@@ -23,13 +23,13 @@
 | 你手上的東西 | 正確做法 |
 |---|---|
 | GitHub repository | `git clone` 到目標專案內或機器上任一位置，再執行 `setup-zhanlu.ps1 -TargetPath <目標>` |
-| 壓縮套件 `zhanlu-v4.4.0.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-zhanlu.ps1` |
+| 壓縮套件 `zhanlu-v4.5.0.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-zhanlu.ps1` |
 | 模組母版資料夾 | 直接在母版執行 `setup-zhanlu.ps1 -TargetPath <目標>`，或先用 `pack.ps1` 產生套件 |
 | 目標專案已裝過舊版模組 | 改用 `-Update`，見〈升級既有專案〉 |
 
 安裝器只複製 `.agents/module.json` 白名單內的共用檔案，並由 `.agents/templates/` 產生全新的專案層，所以不會把母版或其他專案的事實帶進來。
 
-**不要把母版資料夾整包複製成新專案。** 母版 repository 本身帶著一份作用中的專案層（`.agents/project.md`、`.agents/context-index.md`、`.agents/TODO.md`），那是母版自己的專案事實與工作進度；整包複製會讓新專案的 AI 讀到母版的專案識別與母版的 work item，在錯誤前提下工作。若已經手動整包複製過，請先刪掉目標專案內的 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`.agents/`、`.claude/`、`dist/` 與三支腳本，再重新安裝。
+**不要把母版資料夾整包複製成新專案。** 母版 repository 本身帶著一份作用中的專案層（`.agents/project.md`、`.agents/context-index.md`、`.agents/TODO.md`），那是母版自己的專案事實與工作進度；整包複製會讓新專案的 AI 讀到母版的專案識別與母版的 work item，在錯誤前提下工作。若已經手動整包複製過，請先刪掉目標專案內的 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`.agents/`、`.claude/`、`dist/` 與四支腳本，再重新安裝。
 
 ## 安裝流程 A：從 GitHub clone（建議）
 
@@ -60,8 +60,8 @@ git status --porcelain
 不要直接把壓縮檔覆蓋解壓到目標 repository。請先解壓到暫存或相鄰資料夾，再執行安裝器；安裝器會在寫入前檢查所有衝突。
 
 ```powershell
-$archive = 'D:\transfer\zhanlu-v4.4.0.7z'
-$kitDir = 'D:\transfer\zhanlu-v4.4.0'
+$archive = 'D:\transfer\zhanlu-v4.5.0.7z'
+$kitDir = 'D:\transfer\zhanlu-v4.5.0'
 $target = 'D:\work\target-firmware-project'
 
 7z x $archive "-o$kitDir"
@@ -79,9 +79,9 @@ powershell -ExecutionPolicy Bypass -File "$kitDir\setup-zhanlu.ps1" `
 Get-Content .git\info\exclude | Select-String "zhanlu"
 ```
 
-應該看到 **一組** `# >>> zhanlu >>>` 標記區塊，裡面列著 `/AGENTS.md`、`/CLAUDE.md`、`/GEMINI.md`、`/.agents/`、`/.claude/`、三支 `.ps1` 與編輯器設定等條目；走流程 A 時還會多一條 clone 目錄（例如 `/zhanlu/`）。重複安裝或升級都只會改寫這一組，不會愈疊愈多。
+應該看到 **一組** `# >>> zhanlu >>>` 標記區塊，裡面列著 `/AGENTS.md`、`/CLAUDE.md`、`/GEMINI.md`、`/.agents/`、`/.claude/`、四支 `.ps1` 與編輯器設定等條目；走流程 A 時還會多一條 clone 目錄（例如 `/zhanlu/`）。重複安裝或升級都只會改寫這一組，不會愈疊愈多。
 
-> 若目標專案的 `.gitignore` 本來就有 `.*` 之類的規則，`git status` 對 `.agents/`、`.claude/` 沒有鑑別力——就算排除沒寫成功也看不出來。這時要靠上面這行 `Select-String`，或觀察根目錄的 `AGENTS.md` 與三支 `.ps1` 有沒有冒出來（`.*` 蓋不到它們）。
+> 若目標專案的 `.gitignore` 本來就有 `.*` 之類的規則，`git status` 對 `.agents/`、`.claude/` 沒有鑑別力——就算排除沒寫成功也看不出來。這時要靠上面這行 `Select-String`，或觀察根目錄的 `AGENTS.md` 與四支 `.ps1` 有沒有冒出來（`.*` 蓋不到它們）。
 
 ## 安裝後必做：讓 AI 知道專案與任務
 
@@ -263,9 +263,33 @@ powershell -ExecutionPolicy Bypass -File "$kitDir\setup-zhanlu.ps1" `
   -TargetPath $target -Update
 ```
 
-`-Update` 只覆寫共用檔案，並列出哪些是新增、哪些會被覆寫、哪些內容相同。`.agents/project.md`、`.agents/context-index.md` 與 `.agents/TODO.md` 絕不會被寫入，專案事實、資料索引與工作進度完整保留。
+### 升級會動到什麼、不會動到什麼
 
-升級開始前，這三份作用中文件會先複製到 `.agents/.backup-<時間戳>/`。模組不在目標專案的版控內，沒有 `git` 可以還原，這是唯一的復原點。舊備份不會自動清除，確認升級沒問題後可以自行刪除。
+專案文件都填好、參考專案也放好之後才升級，是最常見的情境。實際會發生的事：
+
+| 你的東西 | 升級後 |
+|---|---|
+| `.agents/project.md`、`.agents/context-index.md`、`.agents/TODO.md` | **完全不動**，`-Update` 從不寫入這三個檔 |
+| `.agents/reference-projects/` 底下的 golden reference | **完全不動**，不在白名單內 |
+| `.agents/resources/` 底下的 SPEC、schematic、量測證據 | **完全不動**，不在白名單內 |
+| 你自己新增的 skill 目錄 | **完全不動**，不在任何 manifest 內，也不會被判為 stale |
+| 目標專案的原始碼與 `.gitignore` | **完全不動** |
+| `AGENTS.md`、內建 11 個 skill、三工具入口 | **會被覆寫**成新版 |
+| 舊版白名單有、新版沒有的檔案 | 列為 stale，加 `-RemoveStale` 才刪 |
+
+會被覆寫的只有模組自己的共用檔案。**唯一要注意的是：如果你手改過目標專案內的 `AGENTS.md` 或任何內建 skill，那些修改會被蓋掉。** 共用規則的修改要回母版改，再 `-Update` 下發到各專案。
+
+`-Update -WhatIf` 會先列出完整計畫而不寫入任何檔案，不確定時先跑這個。
+
+升級開始前，三份作用中文件會先複製到 `.agents/.backup-<時間戳>/`。模組不在目標專案的版控內，沒有 `git` 可以還原，這是唯一的復原點。備份不會自動清除，確認升級沒問題後用 `clean-backups.ps1` 清掉：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\clean-backups.ps1 -WhatIf      # 先看要刪什麼
+powershell -ExecutionPolicy Bypass -File .\clean-backups.ps1              # 刪除，會先問過
+powershell -ExecutionPolicy Bypass -File .\clean-backups.ps1 -KeepLatest 1
+```
+
+它只會刪 `.agents/` 底下名為 `.backup-*` 的目錄，找不到 `.agents/module.json` 就直接拒絕執行，也不會跟著 junction 或 symlink 刪到別的地方去。
 
 新版白名單移除的檔案會列為 stale，預設只回報；確認後加上 `-RemoveStale` 才刪除，並一併清掉變空的目錄。
 
@@ -290,6 +314,7 @@ powershell -ExecutionPolicy Bypass -File "$kitDir\setup-zhanlu.ps1" `
 - `.agents/resources/`、`.agents/reference-projects/`：資料掛載點，各自帶一份 `.gitignore`。
 - `setup-zhanlu.ps1`：安全安裝、專案層初始化與 `-Update` 升級。
 - `verify-zhanlu.ps1`：結構、引用與 skill 驗證。
+- `clean-backups.ps1`：刪除 `-Update` 留下的 `.agents/.backup-*` 專案層備份。
 - `pack.ps1`：由白名單重建 7z 套件。
 - `.agents/README.md`：安裝後保留在目標專案內的完整維護說明。
 
@@ -310,7 +335,7 @@ AI 不得猜測 pin、polarity、register value、timing、reset sequence、powe
 
 ## 目標專案不會 commit 到模組
 
-安裝到工作專案後，**整個模組都不進該專案的版控**：`.agents/`、`.claude/`，以及根目錄的 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 與三支 `.ps1`。
+安裝到工作專案後，**整個模組都不進該專案的版控**：`.agents/`、`.claude/`，以及根目錄的 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 與四支 `.ps1`。
 
 忽略規則寫在目標 repository 的 `.git/info/exclude`，**不會新增也不會修改目標專案的 `.gitignore`**。`.git/` 不屬於工作樹，不會被 commit、不會被 push，所以模組的檔名不會出現在該專案的歷史裡。安裝器產生的 `.vscode/settings.json` 與 workspace 檔同樣列入排除；如果目標本來就有自己的 `.vscode/settings.json`，安裝器會原封不動保留它。
 
@@ -332,8 +357,8 @@ AI 不得猜測 pin、polarity、register value、timing、reset sequence、powe
 | Agent 沒有輸出啟動確認 | 確認 VSCode 開的是 repository 根目錄，且根目錄看得到 `AGENTS.md` 與 `.agents/`；直接輸入「工作開始」強制重讀五個檔案 |
 | clone 完了但 AI 完全不知道有規則 | 只 clone 沒安裝。根目錄必須有 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 與 `.agents/`；放在 `zhanlu/` 子資料夾不會被任何工具載入，補跑 `setup-zhanlu.ps1 -TargetPath ..` |
 | AI 讀到的專案識別是 `zhanlu-source` | 讀到的是 `zhanlu/` 子資料夾裡的母版專案層，不是你的專案層；確認根目錄已完成安裝，並把 `/zhanlu/` 加進 `.git/info/exclude` |
-| `git status` 出現 `?? zhanlu/` | 該 clone 是在 v4.3.0 或更早版本安裝的，當時安裝器不排除 kit 目錄；以 v4.4.0 以上重跑 `-Update` 即可補上，或手動加 `/zhanlu/` 到 `.git/info/exclude` |
-| `.git/info/exclude` 有多組 `>>> zhanlu >>>` 區塊 | v4.3.0 及更早版本的區塊清除規則在 CRLF 環境失效，每次安裝或升級都會疊一組；以 v4.4.0 以上重跑 `-Update` 會收斂回一組，多餘的舊區塊可手動刪除 |
+| `git status` 出現 `?? zhanlu/` | 該 clone 是在 v4.3.0 或更早版本安裝的，當時安裝器不排除 kit 目錄；以 v4.5.0 以上重跑 `-Update` 即可補上，或手動加 `/zhanlu/` 到 `.git/info/exclude` |
+| `.git/info/exclude` 有多組 `>>> zhanlu >>>` 區塊 | v4.3.0 及更早版本的區塊清除規則在 CRLF 環境失效，每次安裝或升級都會疊一組；以 v4.5.0 以上重跑 `-Update` 會收斂回一組，多餘的舊區塊可手動刪除 |
 | 安裝後工具仍看不到規則或 skill | 重新載入 VSCode 視窗；工具通常在啟動時才掃描專案規則 |
 | Claude Code 少了某個 skill | 確認 `.claude/skills/<名稱>/SKILL.md` 存在，且 frontmatter 的 `name` 與資料夾同名 |
 | 某個 skill 突然消失或行為不對 | 可能與工具內建 skill 撞名；改用帶專案前綴的名稱，並同步更新 `module.json` 與兩處 SKILL.md |
@@ -347,6 +372,7 @@ AI 不得猜測 pin、polarity、register value、timing、reset sequence、powe
 | 工作專案的 `.agents/` 整個不見了 | 極可能是跑過 `git clean -x`；從你自己的備份還原，模組本體可以重裝但工作歷史不行 |
 | `still contains template token: __XXX__` | 專案層三份文件還沒填，把範本 token 換成實際內容 |
 | `7z.exe was not found` | 安裝 7-Zip，或把 `7z.exe` 加入 PATH |
+| `.agents/` 被 `.backup-*` 佔滿 | 每次 `-Update` 都會留一份，不會自動清；跑 `clean-backups.ps1` 刪除，或 `-KeepLatest 1` 只留最新一份 |
 | 升級後專案事實不見了 | `-Update` 不會寫入作用中三份文件；若內容確實變了，代表有人手動覆蓋，請從版控還原 |
 
 ## 手動驗證

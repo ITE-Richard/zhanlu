@@ -86,7 +86,7 @@
 - 不猜測 register value、pin、polarity、timing、delay、reset sequence 或 power rail ordering。
 - 不為通過 build 而關閉 warning、繞過 assert、註解測試或忽略 error handling。
 - 不修改 generated code、第三方 vendor code、binary、build output 或唯讀基準，除非使用者明確要求。
-- 模組自身在目標專案內唯讀：`AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`.agents/module.json`、`.agents/skills/`、`.agents/templates/`、`.agents/rules/`、`.claude/` 與三支 `.ps1` 一律不得修改；共用規則的修改回到模組母版，再以 `-Update` 下發。
+- 模組自身在目標專案內唯讀：`AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`.agents/module.json`、`.agents/skills/`、`.agents/templates/`、`.agents/rules/`、`.claude/` 與四支 `.ps1` 一律不得修改；共用規則的修改回到模組母版，再以 `-Update` 下發。
 - 上述唯讀範圍的例外只有三份作用中文件（`.agents/project.md`、`.agents/context-index.md`、`.agents/TODO.md`）與兩個資料掛載點（`.agents/resources/`、`.agents/reference-projects/`）。
 - 專案內部另有不得修改的路徑時，登記於 `project.md` 的額外唯讀區域。
 - 不混合無關 work item，不重排無關程式碼；patch 必須可審查、可驗證、可回退。

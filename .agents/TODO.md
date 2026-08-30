@@ -1,7 +1,7 @@
 # TODO.md — 模組母版工作追蹤
 
 - 專案識別：`zhanlu-source`
-- 當前 work item：`none`
+- 當前 work item：`KIT-014`
 
 ## Work items
 | ID | 工作類型 | 功能域 | 項目 | 相依 | 狀態 | 完成條件 |
@@ -19,6 +19,53 @@
 | KIT-011 | 重構 | 模組識別 | 模組更名為湛盧 zhanlu，五層名稱統一並處理既有安裝遷移 | KIT-010 | 完成 | 名稱五層一致、舊標記可自動清除、舊版套件升級不洩漏、封裝與驗證通過 |
 | KIT-012 | 文件 | 可攜套件 | README 補 GitHub clone 安裝通道，明確區分「取得模組」與「安裝模組」 | KIT-011 | 完成 | clone 流程、`zhanlu/` 排除缺口、驗收方式與故障排除皆有指引，母版驗證通過 |
 | KIT-013 | Bug fix／重構 | 安裝工具 | 安裝器自動排除 kit 目錄、修正 exclude 區塊堆疊、兩支腳本更名為 zhanlu | KIT-012 | 完成 | 區塊永遠一組、kit 在目標內自動排除且在目標外不多寫規則、更名可由舊版升級遷移、封裝與驗證通過 |
+| KIT-014 | 功能開發／文件 | 維護工具 | 新增 `clean-backups.ps1` 清除專案層備份，README 補「升級會動到什麼」對照 | KIT-013 | 完成 | 只刪 `.agents/.backup-*`、非安裝目錄拒絕執行、`-WhatIf`／`-KeepLatest` 正確、升級不動使用者資料有實測佐證、封裝與驗證通過 |
+
+## KIT-014 完成紀錄
+
+### 需求（2026-08-30 使用者）
+- 需要一支可清除 `.agents/.backup-*` 的腳本；`-Update` 每次都留一份且從不自動清除。
+- 使用者提問：專案文件都填好、參照專案也放好之後才升級，會發生什麼事。
+
+### 升級影響範圍（實測佐證，非推論）
+以一個「已填寫專案層 + 已放基準與 SPEC + 自建 skill」的目標執行 `-Update -RemoveStale`，比對前後 SHA-256：
+
+| 對象 | 結果 |
+|---|---|
+| `.agents/project.md`／`context-index.md`／`TODO.md` | hash 完全相同 |
+| `.agents/reference-projects/EC_CORE_GOLDEN/src/main.c` | hash 完全相同 |
+| `.agents/resources/spec/ec-spec.txt` | hash 完全相同 |
+| 自建的 `.agents/skills/my-custom-skill/SKILL.md` | hash 完全相同，且未被判為 stale |
+| 目標原始碼與 `.gitignore` | 未變動，`git status` 全空 |
+
+原因：兩個資料掛載點的內容與使用者自建 skill 都不在 `portableFiles` 內，`-Update` 只走白名單；stale 判定也只比對新舊 manifest，不掃描目錄。唯一會被覆寫的是模組自己的共用檔案（`AGENTS.md`、內建 11 個 skill、三工具入口）。
+
+### clean-backups.ps1 設計
+- 命名不採 `clean-zhanlu.ps1`：README 明文警告不要在工作專案跑 `git clean -x`，名稱裡的 `clean` 加模組名容易被誤讀成「移除 zhanlu」。改用述詞化的 `clean-backups.ps1`，與 `pack.ps1` 同風格。
+- `-TargetPath` 預設為腳本自身所在目錄（安裝後即專案根）；`.agents/module.json` 不存在就直接 throw，避免打錯路徑走到無關目錄樹。
+- 只處理 `.agents/` 底下名為 `.backup-*` 的目錄；備份時間戳為 `yyyyMMdd-HHmmss`，字典序即時間序。
+- `ConfirmImpact='High'`：備份是專案層唯一復原點，預設會先問過；`-WhatIf` 看計畫、`-Confirm:$false` 供無人值守使用。
+- `-KeepLatest N` 保留最新 N 份。
+- 刪除前檢查 ReparsePoint 並跳過，避免遞迴刪除穿過 junction／symlink 刪到外部目錄。
+
+### 測試期間發現並修正的 bug
+- **Windows PowerShell 在繫結參數預設值時 `$PSScriptRoot` 為空**：`param([string]$TargetPath = $PSScriptRoot)` 經 `powershell.exe -File` 呼叫時 `$TargetPath` 綁成空字串，`Test-Path -LiteralPath` 隨即以 `ParameterArgumentValidationErrorEmptyStringNotAllowed` 失敗。以 `dbg2.ps1` 確認 `$PSScriptRoot` 在函式主體有值、在 param 預設值無值。
+- 修法：參數不給預設值，改在主體以 `IsNullOrWhiteSpace` 判斷後回填。`setup-zhanlu.ps1` 的 `$sourceRoot = $PSScriptRoot` 位於主體，不受影響。
+
+### 版本
+- 升至 `4.5.0`：`portableFiles` 由 39 增為 40。
+
+### 驗證證據
+- 四支腳本 AST parse：全部通過。
+- 母版 `verify-zhanlu.ps1 -PackageSource`：exit 0，40 portable／1 package-only／11 skills。
+- `clean-backups.ps1` 測試矩陣：`-WhatIf` 列出計畫且零刪除（4 份仍在）；`-KeepLatest 2 -Confirm:$false` 刪 2 留 2 且留下的是最新兩份；`-Confirm:$false` 全刪歸零；無備份時輸出提示並 exit 0；對非安裝目錄以 exit 1 拒絕。
+- 全新安裝：`clean-backups.ps1` 隨套件落地於目標根目錄，`/clean-backups.ps1` 已列入 exclude 區塊，`git status` 全空。
+- `pack.ps1`：exit 0，`zhanlu-v4.5.0.7z`，35992 bytes，40 個檔案。
+- `7z t`：Everything is Ok，Files: 40；SHA-256 `9AD7B1B12265854BE596EFBFC780A9F5D6AC90B295BC66162267AEF56D35F822`。
+
+### 尚未處理
+- `dist/zhanlu-v4.4.0.7z` 仍在，`pack.ps1` 已提示；是否刪除待使用者決定。
+- 使用者的 `ite-ec-app-Clevo-clevo-zhanlu` 為 v4.4.0，需 `git pull` 後 `-Update` 才會拿到 `clean-backups.ps1`；該專案現有的 `.agents/.backup-20260830-110257/` 也待清理。
 
 ## KIT-013 完成紀錄
 

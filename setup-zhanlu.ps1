@@ -105,7 +105,8 @@ $moduleGitPaths = @(
     'GEMINI.md',
     'pack.ps1',
     'setup-zhanlu.ps1',
-    'verify-zhanlu.ps1'
+    'verify-zhanlu.ps1',
+    'clean-backups.ps1'
 )
 
 $missing = foreach ($relativePath in $portableFiles) {

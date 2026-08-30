@@ -30,6 +30,7 @@ README.md                 # 壓縮套件入口說明；不複製到目標專案�
 pack.ps1
 setup-zhanlu.ps1
 verify-zhanlu.ps1
+clean-backups.ps1
 .agents/
   module.json
   README.md
@@ -49,8 +50,8 @@ verify-zhanlu.ps1
 建議先把 7z 解壓到暫存資料夾，再從暫存資料夾執行安裝器；不要直接覆蓋目標 repository。
 
 ```powershell
-7z x .\zhanlu-v4.4.0.7z -o'.\zhanlu-v4.4.0'
-powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.4.0\setup-zhanlu.ps1 `
+7z x .\zhanlu-v4.5.0.7z -o'.\zhanlu-v4.5.0'
+powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.5.0\setup-zhanlu.ps1 `
   -TargetPath 'D:\path\to\target-project'
 ```
 
@@ -90,6 +91,8 @@ powershell -ExecutionPolicy Bypass -File .\setup-zhanlu.ps1 `
 - 目標沒有 `.agents/module.json`，或三份作用中文件不齊全時直接拒絕，避免把半套模組蓋成看似完整。
 - 會比對目標已安裝的舊 `module.json`，列出新版白名單已移除的檔案；預設只回報，加上 `-RemoveStale` 才刪除。
 - 升級結束會自動執行 `verify-zhanlu.ps1`。
+- 升級前會把三份作用中文件複製到 `.agents/.backup-<時間戳>/`，且不會自動清除；確認升級無誤後以 `clean-backups.ps1` 清理。
+- `.agents/resources/` 與 `.agents/reference-projects/` 的內容不在白名單內，升級完全不會碰；自行新增的 skill 目錄同理，不會被當成 stale。
 
 若曾在目標專案手改過 `AGENTS.md` 或任一 skill，升級會覆蓋這些修改。共用規則的修改應該回到母版，不要留在單一專案。
 
@@ -107,6 +110,7 @@ powershell -ExecutionPolicy Bypass -File .\setup-zhanlu.ps1 `
 /pack.ps1
 /setup-zhanlu.ps1
 /verify-zhanlu.ps1
+/clean-backups.ps1
 # <<< zhanlu <<<
 ```
 
