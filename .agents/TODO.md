@@ -42,6 +42,7 @@
 - Release notes：`dist/RELEASE-NOTES-v4.6.0.md`（gitignored，僅供上傳），涵蓋模組定位、安裝流程 A／B、升級、本版重點與套件校驗表。
 - Asset：`zhanlu-v4.6.0.7z`。
 - URL：`https://github.com/ITE-Richard/zhanlu/releases/tag/v4.6.0`
+- 內部鏡像 URL：`http://tmd1.internal.ite.com.tw:3000/richard.jheng/zhanlu/releases/tag/v4.6.0`
 
 ### 驗證證據
 - `verify-zhanlu.ps1 -PackageSource`：exit 0，41 portable／1 package-only／11 skills。
@@ -51,6 +52,16 @@
 - `gh release create --verify-tag --latest`：exit 0。
 - **下載回驗**：`gh release download` 取回的 asset 為 38067 bytes，SHA-256 與本機完全相同，`7z t` Everything is Ok、Files: 41。
 - `GET /repos/ITE-Richard/zhanlu/releases/latest`：`tag=v4.6.0`、`draft=false`、`prerelease=false`、asset `state=uploaded`，確認側邊欄與 `/releases/latest` 永久連結都指向本版。
+
+### 內部 Forgejo 鏡像發布（同 work item）
+- remote `itegit` = `http://tmd1.internal.ite.com.tw:3000/richard.jheng/zhanlu.git`，伺服器為 Forgejo（Gitea fork），API 路徑相容 `/api/v1`。
+- 該站啟用「需登入才能瀏覽」：匿名呼叫 API 與匿名下載 attachment 都會被導向登入頁，驗證時必須帶 token。
+- `gh` 只服務 GitHub，此處不適用；Forgejo 預設也沒有 OAuth device flow，因此改由使用者建立 access token（scope：`repository` 讀寫）並以 `setx` 設定，由母版以使用者層級環境變數讀取。
+- `setx` 寫入登錄檔，既有行程不會繼承；需以 `[Environment]::GetEnvironmentVariable('GITEA_TOKEN','User')` 直接讀取。
+- **PowerShell 5.1 序列化陷阱**：`Get-Content -Raw` 回傳 PSObject 包裝的字串，`ConvertTo-Json` 會序列化成 `{"value":...,"Length":...}` 物件，Forgejo 以 HTTP 422 `cannot unmarshal object into ... CreateReleaseOption.Note of type string` 拒絕。改用 `[IO.File]::ReadAllText` 並顯式轉型 `[string]` 後通過。
+- 發布結果：release id=21、asset id=1、`draft=false`、`prerelease=false`、body 1965 字元、assets 1。
+- 驗證：帶 token 從 `/attachments/<uuid>` 與 `/releases/download/v4.6.0/zhanlu-v4.6.0.7z` 兩條路徑各下載一次，皆為 38067 bytes 且 SHA-256 與本機相同；`7z t` Everything is Ok、Files: 41。
+- 三邊 `main` 與 `refs/tags/v4.6.0` 一致：local／origin／itegit 皆為 `2173996`，tag 物件皆為 `dacd7ff`。
 
 ### 後續可選項
 - 尚未建立 GitHub Actions 自動發布（push tag 觸發 verify + pack + release）；本次為手動發布，待使用者決定是否導入。
