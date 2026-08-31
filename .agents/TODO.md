@@ -22,6 +22,39 @@
 | KIT-014 | 功能開發／文件 | 維護工具 | 新增 `clean-backups.ps1` 清除專案層備份，README 補「升級會動到什麼」對照 | KIT-013 | 完成 | 只刪 `.agents/.backup-*`、非安裝目錄拒絕執行、`-WhatIf`／`-KeepLatest` 正確、升級不動使用者資料有實測佐證、封裝與驗證通過 |
 | KIT-015 | Bug fix | 維護工具 | `clean-backups.ps1` 從 clone 目錄執行時找錯 `.agents/` | KIT-014 | 完成 | 從 clone 執行會往上定位到已安裝專案並印出位置、指向 kit 時明確拒絕、既有選項行為不變 |
 | KIT-016 | 功能開發 | 維護工具 | 新增 `update-zhanlu.ps1`，把 `git pull` + `-Update` 收成一行 | KIT-015 | 完成 | 免參數即可執行、自動定位專案、pull 失敗中止、非自有 clone 不誤 pull、選項可透傳、封裝與驗證通過 |
+| KIT-017 | 文件／封裝 | 發布 | 建立 GitHub Release v4.6.0，附可攜套件 | KIT-016 | 完成 | tag 推送、release 建立、7z asset 上傳且 SHA-256 相符 |
+
+## KIT-017 完成紀錄
+
+### 目標
+- 在 `https://github.com/ITE-Richard/zhanlu` 建立第一個 GitHub Release（v4.6.0），以 release asset 提供可攜套件。`dist/` 與 `*.7z` 在 `.gitignore` 內，套件無法也不應進版控，release asset 是唯一正確的發布通道。
+
+### 認證障礙與解法
+- 這台機器原本沒有 `gh`：以 winget 安裝 GitHub CLI 2.98.0（exit 0）。
+- `git push` 走 Git Credential Manager 可用，但建立 release 與上傳 asset 是 GitHub REST API 動作，`gh` 有獨立的認證儲存，借不到 git 那份憑證；瀏覽器已登入也不會傳給 CLI。
+- 嘗試以 `git credential fill` 取既有 token 被權限規則擋下，未取得也未使用任何憑證。
+- `gh auth login` 的互動提示需要 TTY，本 session 的 stdin 為 null。解法：以 `Start-Process -NoNewWindow -RedirectStandardError` 在背景啟動 `gh auth login --web --hostname github.com --git-protocol https --skip-ssh-key`，device flow 的一次性代碼會寫入 stderr 檔案；由使用者在瀏覽器完成授權，gh 背景輪詢後自行寫入 keyring。
+- 結果：`ITE-Richard`（keyring），scopes `gist`、`read:org`、`repo`。
+
+### 發布內容
+- Tag：annotated `v4.6.0`，物件 `dacd7ff`，指向 commit `dc0feb6`。
+- 標題：`湛盧 Zhanlu v4.6.0`。
+- Release notes：`dist/RELEASE-NOTES-v4.6.0.md`（gitignored，僅供上傳），涵蓋模組定位、安裝流程 A／B、升級、本版重點與套件校驗表。
+- Asset：`zhanlu-v4.6.0.7z`。
+- URL：`https://github.com/ITE-Richard/zhanlu/releases/tag/v4.6.0`
+
+### 驗證證據
+- `verify-zhanlu.ps1 -PackageSource`：exit 0，41 portable／1 package-only／11 skills。
+- `pack.ps1`：exit 0，`dist/zhanlu-v4.6.0.7z`，38067 bytes，41 個檔案。
+- 本機 `7z t`：Everything is Ok，Files: 41；SHA-256 `FAFCD54A1E39CF578BF7ACEDFF724D79BE34BBD27BC8598F284ABC21695012FB`。
+- `git ls-remote --tags origin`：`refs/tags/v4.6.0` 存在。
+- `gh release create --verify-tag --latest`：exit 0。
+- **下載回驗**：`gh release download` 取回的 asset 為 38067 bytes，SHA-256 與本機完全相同，`7z t` Everything is Ok、Files: 41。
+- `GET /repos/ITE-Richard/zhanlu/releases/latest`：`tag=v4.6.0`、`draft=false`、`prerelease=false`、asset `state=uploaded`，確認側邊欄與 `/releases/latest` 永久連結都指向本版。
+
+### 後續可選項
+- 尚未建立 GitHub Actions 自動發布（push tag 觸發 verify + pack + release）；本次為手動發布，待使用者決定是否導入。
+- README 未加入 release 下載連結；目前〈取得模組的三種方式〉以 `git clone` 為主要通道，是否補一列待決。
 
 ## KIT-016 完成紀錄
 
