@@ -30,7 +30,7 @@
 5. 已啟用技能的方法與檢查表；技能不得擴張任務授權或覆寫上層規則。
 
 ## Session 載入確認
-- 首次進行實質分析、修改或執行前，必須完整讀取下列檔案：
+- 首次進行實質分析、修改或執行前，必須確認下列五份檔案存在；完整讀取前四份，`TODO.md` 讀取檔頭、work item 表、當前項目與必要相依，歷史完成紀錄只在任務相關時按索引讀取：
   1. `./AGENTS.md`
   2. `./.agents/module.json`
   3. `./.agents/project.md`
@@ -43,9 +43,9 @@
   - `不合法: <欄位清單>`：值不在 schema 允許範圍內，停止實質工作並要求修正。
 - `projectSchema.appliesTo` 與 `projectKind` 不符時跳過欄位檢查，`schema` 回報 `n/a`。
 - `type=pattern` 的欄位以 `pattern` 驗證完整欄位值；若同時有 `multiple=true`，以 `separator` 解讀一個以上的項目，且 `uniqueItems=true` 時不得有重複項目。
-- 完成讀取後輸出：`啟動確認：core=<版本> / project=<專案識別> / context=<索引版次> / work-item=<ID 或 none> / schema=<ok｜未填 n 欄｜不合法: 清單｜n/a> / missing=<none 或清單>`。
+- 完成上述載入後輸出：`啟動確認：core=<版本> / project=<專案識別> / context=<索引版次> / work-item=<ID 或 none> / schema=<ok｜未填 n 欄｜不合法: 清單｜n/a> / missing=<none 或清單>`。
 - 驗證值必須取自檔案實際內容，不可推測。確認應在首次實質工作前完成，不要求早於必要的檔案讀取工具呼叫。
-- 收到「工作開始」時，重新讀取五個檔案，並依當前 work item 載入相關技能與索引資料。
+- 收到「工作開始」時，依上述範圍重新載入五份檔案，並依當前 work item 載入相關技能、歷史紀錄與索引資料。
 
 ## 語言與回覆
 - 與使用者互動一律使用繁體中文。

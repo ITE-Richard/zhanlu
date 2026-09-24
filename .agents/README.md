@@ -10,7 +10,7 @@
 | 套件清單與版本 | `.agents/module.json` | 是 |
 | 目標專案事實 | `.agents/project.md` | 否，安裝時由範本建立 |
 | 資料位置與閱讀順序 | `.agents/context-index.md` | 否，安裝時由範本建立 |
-| 工作項目與驗證狀態 | `.agents/TODO.md` | 否，安裝時由範本建立 |
+| 工作項目與驗證狀態 | `.agents/TODO.md` | 否，安裝時由範本建立；完成詳情可按需存入 `.agents/history/` |
 | 通用工作方法 | `.agents/skills/*/SKILL.md` | 是 |
 | Claude skill 載入器 | `.claude/skills/*/SKILL.md` | 是，只指向通用 skill |
 | 欄位合法值 schema | `.agents/module.json` 的 `projectSchema` | 是，擴充一律回母版改再 `-Update` 下發 |
@@ -18,7 +18,7 @@
 | SPEC、schematic、log 等 | `.agents/resources/` | 只複製 `.gitignore`，內容每案掛載 |
 | golden reference | `.agents/reference-projects/` | 只複製 `.gitignore`，內容每案掛載或登記外部唯讀路徑 |
 
-`CLAUDE.md`、`GEMINI.md` 與 `.agents/rules/project-context.md` 只負責導向上述共同來源，不複製規則內文。Codex 直接從 `AGENTS.md` 進入；不同工具的自動載入能力若有差異，仍以 `AGENTS.md` 的 session 啟動確認為共同檢查點。
+`CLAUDE.md`、`GEMINI.md` 與 `.agents/rules/project-context.md` 只負責導向上述共同來源，不複製規則內文。Claude 啟動時不展開完整 `TODO.md`；Antigravity 的 `@` 路徑只是檔案參照。Codex 直接從 `AGENTS.md` 進入；不同工具的自動載入能力若有差異，仍以 `AGENTS.md` 的 session 啟動確認為共同檢查點。
 
 ## 目錄結構
 
@@ -51,8 +51,8 @@ update-zhanlu.ps1
 建議先把 7z 解壓到暫存資料夾，再從暫存資料夾執行安裝器；不要直接覆蓋目標 repository。
 
 ```powershell
-7z x .\zhanlu-v4.7.1.7z -o'.\zhanlu-v4.7.1'
-powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.7.1\setup-zhanlu.ps1 `
+7z x .\zhanlu-v4.8.0.7z -o'.\zhanlu-v4.8.0'
+powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.8.0\setup-zhanlu.ps1 `
   -TargetPath 'D:\path\to\target-project'
 ```
 
@@ -67,7 +67,7 @@ powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.7.1\setup-zhanlu.ps1 `
 
 - `project.md`：controller、SoC、架構、建置方式、硬體限制與驗證能力。
 - `context-index.md`：程式碼、SPEC、schematic、log、工具、參考專案的位置與閱讀順序。
-- `TODO.md`：當前 work item、完成條件、驗證證據與未決風險。
+- `TODO.md`：當前 work item、完成條件、驗證證據與未決風險；長篇完成紀錄可搬到 `.agents/history/`，在 TODO 留索引。升級不會自動搬移既有紀錄，搬移前先備份。
 
 無法由 repository 或文件查得的板級事實必須向使用者確認，不可由 AI 猜測。
 

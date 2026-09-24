@@ -135,8 +135,7 @@ if ($manifest) {
         '@AGENTS.md',
         '@.agents/module.json',
         '@.agents/project.md',
-        '@.agents/context-index.md',
-        '@.agents/TODO.md'
+        '@.agents/context-index.md'
     )
     foreach ($entryFile in @('CLAUDE.md', 'GEMINI.md')) {
         if (Require-File $entryFile) {
@@ -146,12 +145,21 @@ if ($manifest) {
                     Add-ValidationError "$entryFile is missing shared-source reference: $import"
                 }
             }
+            if ($entryFile -eq 'CLAUDE.md' -and $entryContent -match '(?m)^\s*@\.agents/TODO\.md\s*$') {
+                Add-ValidationError 'CLAUDE.md must not eagerly import the full TODO.md history.'
+            }
+            if ($entryFile -eq 'GEMINI.md' -and $entryContent -notmatch [regex]::Escape('@.agents/TODO.md')) {
+                Add-ValidationError 'GEMINI.md is missing the TODO.md file reference.'
+            }
         }
     }
 
     $antigravityRule = '.agents/rules/project-context.md'
     if (Require-File $antigravityRule) {
         $ruleContent = Get-Content -LiteralPath (Join-Path $root $antigravityRule) -Raw -Encoding UTF8
+        if ($ruleContent -notmatch '(?s)\A---\r?\ntrigger:[ \t]*always_on[ \t]*\r?\n.*?\r?\n---(?:\r?\n|\z)') {
+            Add-ValidationError "$antigravityRule must declare an always_on YAML frontmatter trigger."
+        }
         $expectedRuleImports = @(
             '@../../AGENTS.md',
             '@../module.json',

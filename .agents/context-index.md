@@ -20,6 +20,7 @@
 | DOC-01 | 使用說明 | `./.agents/README.md` | 安裝、資料責任與驗收 | Primary |
 | TEMPLATE-01 | 專案範本 | `./.agents/templates/` | 建立新專案層 | Primary |
 | SKILL-01 | 技能本體 | `./.agents/skills/` | 任務與領域方法 | Primary |
+| HISTORY-01 | 已完成工作紀錄 | `./.agents/history/KIT-001-KIT-020.md` | 母版歷史與舊版驗證證據；按當前任務讀取 | Historical |
 
 ## 外部基準、硬體文件與驗證證據
 - 母版沒有外部基準、SPEC、schematic、BOM、log、waveform 或實板結果。

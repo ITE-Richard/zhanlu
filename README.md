@@ -1,4 +1,4 @@
-# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.7.1
+# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.8.0
 
 > 湛盧為十大名劍之首，仁道之劍：持劍者無道，劍自去之。本模組同理——不守規則、不留證據、靠猜作答，它就不為你所用。
 
@@ -18,12 +18,12 @@
 
 > **關鍵觀念：取得模組 ≠ 安裝模組。**
 >
-> 三個工具都只掃描 **repository 根目錄**的 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 與 `.agents/`。把模組放在子資料夾（例如 clone 出來的 `zhanlu/`）**不會被載入**，一定要再跑一次 `setup-zhanlu.ps1`，由它把共用檔案送到根目錄並產生專案層。
+> 湛盧的預設安裝位置是**目標 repository 根目錄**。只把母版 clone 到子資料夾（例如 `zhanlu/`），不會讓開在目標根目錄的工作階段取得正確的專案層；請再跑 `setup-zhanlu.ps1`，由它把共用檔案送到根目錄並產生該專案自己的資料。各工具對巢狀規則的掃描方式不同，勿將子資料夾中的母版誤認為目標專案的入口。
 
 | 你手上的東西 | 正確做法 |
 |---|---|
 | GitHub repository | `git clone` 到目標專案內或機器上任一位置，再執行 `setup-zhanlu.ps1 -TargetPath <目標>` |
-| 壓縮套件 `zhanlu-v4.7.1.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-zhanlu.ps1` |
+| 壓縮套件 `zhanlu-v4.8.0.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-zhanlu.ps1` |
 | 模組母版資料夾 | 直接在母版執行 `setup-zhanlu.ps1 -TargetPath <目標>`，或先用 `pack.ps1` 產生套件 |
 | 目標專案已裝過舊版模組 | 改用 `-Update`，見〈升級既有專案〉 |
 
@@ -60,8 +60,8 @@ git status --porcelain
 不要直接把壓縮檔覆蓋解壓到目標 repository。請先解壓到暫存或相鄰資料夾，再執行安裝器；安裝器會在寫入前檢查所有衝突。
 
 ```powershell
-$archive = 'D:\transfer\zhanlu-v4.7.1.7z'
-$kitDir = 'D:\transfer\zhanlu-v4.7.1'
+$archive = 'D:\transfer\zhanlu-v4.8.0.7z'
+$kitDir = 'D:\transfer\zhanlu-v4.8.0'
 $target = 'D:\work\target-firmware-project'
 
 7z x $archive "-o$kitDir"
@@ -177,12 +177,14 @@ LA log 要用**協定解碼後的 CSV**，一列一筆 transaction；raw sample 
 
 填完把 `project.md` 的「目前 work item」與這裡的「當前 work item」對齊；兩邊不一致時 AI 以 `TODO.md` 為準並回報衝突。
 
+`TODO.md` 建議只保留 work item 總表、當前項目與歷史索引；完成項目的長篇紀錄可另存於 `.agents/history/`，按目前任務需要再讀。升級器不會替既有專案搬移或刪除工作紀錄，搬移前請先備份。
+
 ### 步驟 4：首次啟動與驗收
 
 以 VSCode 開啟目標 repository 根目錄（不是上層資料夾），啟動 Claude Code、Codex 或 Antigravity，輸入「工作開始」。Agent 應先回報：
 
 ```text
-啟動確認：core=<版本> / project=<專案識別> / context=<索引版次> / work-item=<ID 或 none> / missing=<none 或清單>
+啟動確認：core=<版本> / project=<專案識別> / context=<索引版次> / work-item=<ID 或 none> / schema=<ok｜未填 n 欄｜不合法: 清單｜n/a> / missing=<none 或清單>
 ```
 
 確認三件事：
@@ -202,7 +204,7 @@ LA log 要用**協定解碼後的 CSV**，一列一筆 transaction；raw sample 
 兩句可直接使用的指令：
 
 - `套用到新專案` — 盤點現況、初始化專案層、列出待補資訊。
-- `工作開始` — 重讀五份檔案、選定 work item 與技能、載入索引指向的證據後才動手。
+- `工作開始` — 核對五份檔案，完整讀取核心、清單與專案設定／索引，從 TODO 讀當前項目及相依，再按需讀歷史與證據。
 
 ## 三個工具如何載入
 
@@ -210,9 +212,9 @@ LA log 要用**協定解碼後的 CSV**，一列一筆 transaction；raw sample 
 |---|---|---|
 | Claude Code | `CLAUDE.md` | `.claude/skills/` 載入器導向 `.agents/skills/` |
 | Codex | `AGENTS.md` | `.agents/skills/` |
-| Antigravity | `GEMINI.md`、`.agents/rules/project-context.md` | `.agents/skills/` |
+| Antigravity | `AGENTS.md`、`GEMINI.md`、`.agents/rules/project-context.md`（帶 `always_on` trigger） | `.agents/skills/` |
 
-三個入口都導向同一份 `AGENTS.md`、`.agents/project.md`、`.agents/context-index.md` 與 `.agents/TODO.md`，避免不同 Agent 各自維護互相矛盾的規則。
+三個入口都導向同一份 `AGENTS.md`、`.agents/project.md`、`.agents/context-index.md` 與 `.agents/TODO.md`，避免不同 Agent 各自維護互相矛盾的規則。Antigravity 的 `@` 檔案參照不等於展開內容，仍須核對啟動確認。
 
 ## 內建技能
 
@@ -373,7 +375,7 @@ AI 不得猜測 pin、polarity、register value、timing、reset sequence、powe
 
 | 症狀 | 檢查方式 |
 |---|---|
-| Agent 沒有輸出啟動確認 | 確認 VSCode 開的是 repository 根目錄，且根目錄看得到 `AGENTS.md` 與 `.agents/`；直接輸入「工作開始」強制重讀五個檔案 |
+| Agent 沒有輸出啟動確認 | 確認 VSCode 開的是 repository 根目錄，且根目錄看得到 `AGENTS.md` 與 `.agents/`；直接輸入「工作開始」依規則重新載入當前必要內容 |
 | clone 完了但 AI 完全不知道有規則 | 只 clone 沒安裝。根目錄必須有 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 與 `.agents/`；放在 `zhanlu/` 子資料夾不會被任何工具載入，補跑 `setup-zhanlu.ps1 -TargetPath ..` |
 | AI 讀到的專案識別是 `zhanlu-source` | 讀到的是 `zhanlu/` 子資料夾裡的母版專案層，不是你的專案層；確認根目錄已完成安裝，並把 `/zhanlu/` 加進 `.git/info/exclude` |
 | `git status` 出現 `?? zhanlu/` | 該 clone 是在 v4.3.0 或更早版本安裝的，當時安裝器不排除 kit 目錄；以 v4.6.0 以上重跑 `-Update` 即可補上，或手動加 `/zhanlu/` 到 `.git/info/exclude` |
