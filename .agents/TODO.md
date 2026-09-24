@@ -25,6 +25,15 @@
 | KIT-017 | 文件／封裝 | 發布 | 建立 GitHub Release v4.6.0，附可攜套件 | KIT-016 | 完成 | tag 推送、release 建立、7z asset 上傳且 SHA-256 相符 |
 | KIT-018 | 功能開發 | 專案層 schema | 「目標晶片」支援一顆或多顆 ITE IC 型號 | KIT-017 | 完成 | schema、範本與 README 語意一致；單顆／多顆／錯誤分隔／非法型號 regression 通過；母版驗證與封裝通過 |
 | KIT-019 | Bug fix | 專案層 schema | 多顆目標晶片改用全形逗號 `，` 分隔 | KIT-018 | 完成 | schema、驗證、範本與 README 一致；全形逗號通過，頓號與半形逗號拒絕；母版驗證與封裝通過 |
+| KIT-020 | 文件／封裝 | 發布 | 將已驗證的 v4.7.1 推送並發布 GitHub Release | KIT-019 | 完成 | main、annotated tag 與 Release 可查，下載回驗 asset 的大小、SHA-256 與 7z 完整性均通過 |
+
+## KIT-020 完成紀錄
+
+- KIT-019 commit `66f5eed` 已推送到 `origin/main`。
+- Annotated tag `v4.7.1` 物件為 `158d7d1a58e1703119493571127a3740c2966639`，指向 commit `66f5eedc750de38ce4759ff9fb6bbc65a13a4221`；tag 已推送至 `origin`。
+- GitHub Release：`https://github.com/ITE-Richard/zhanlu/releases/tag/v4.7.1`，`draft=false`、`prerelease=false`，asset `zhanlu-v4.7.1.7z` 為 `uploaded`。
+- 下載回驗：asset 38923 bytes；SHA-256 `EB5505E4C7A84FEAF2A2554F50F0D30AA977F1A89AB03DB18F1DFF0E4E3A54A9` 與本機相同；`7z t` Everything is Ok、Files: 41。
+- Release notes 使用 `dist/RELEASE-NOTES-v4.7.1.md`；`dist/` 保持 gitignored，資產由 GitHub Release 提供。
 
 ## KIT-019 完成紀錄
 
