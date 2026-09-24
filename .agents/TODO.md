@@ -23,6 +23,25 @@
 | KIT-015 | Bug fix | 維護工具 | `clean-backups.ps1` 從 clone 目錄執行時找錯 `.agents/` | KIT-014 | 完成 | 從 clone 執行會往上定位到已安裝專案並印出位置、指向 kit 時明確拒絕、既有選項行為不變 |
 | KIT-016 | 功能開發 | 維護工具 | 新增 `update-zhanlu.ps1`，把 `git pull` + `-Update` 收成一行 | KIT-015 | 完成 | 免參數即可執行、自動定位專案、pull 失敗中止、非自有 clone 不誤 pull、選項可透傳、封裝與驗證通過 |
 | KIT-017 | 文件／封裝 | 發布 | 建立 GitHub Release v4.6.0，附可攜套件 | KIT-016 | 完成 | tag 推送、release 建立、7z asset 上傳且 SHA-256 相符 |
+| KIT-018 | 功能開發 | 專案層 schema | 「目標晶片」支援一顆或多顆 ITE IC 型號 | KIT-017 | 完成 | schema、範本與 README 語意一致；單顆／多顆／錯誤分隔／非法型號 regression 通過；母版驗證與封裝通過 |
+
+## KIT-018 完成紀錄
+
+### 需求與設計
+- 原 `目標晶片` pattern 只能接受單一 `IT` 型號，`IT51526、IT8298` 會被判為不合法，無法表達同一專案整合多顆 IC driver／HAL 的情境。
+- 保留既有 ITE 型號規則與單顆寫法；多顆使用全形頓號 `、` 分隔，並以 `multiple=true`、`separator=、`、`uniqueItems=true` 明確定義多值與不可重複語意。
+- `project.md` 只保存晶片型號清單；每顆 IC 的角色及 driver／HAL／SPEC 來源逐筆登記於 `context-index.md`，避免欄位混入路徑或架構細節。
+- 版本升至 `4.7.0`，可攜檔案數維持 41。
+
+### 驗證證據
+- `module.json` JSON parse：通過；`verify-zhanlu.ps1` Windows PowerShell 5.1 AST parse：通過，腳本維持純 ASCII 以避開無 BOM UTF-8 的 ANSI 解碼問題。
+- schema regression：`IT51526`、`IT51526、IT8298` 通過；逗號分隔、混入非 ITE 型號、重複型號皆拒絕。
+- `verify-zhanlu.ps1 -PackageSource`：exit 0，zhanlu 4.7.0、41 portable／1 package-only／11 skills。
+- 乾淨目標安裝：exit 0；安裝後 manifest 為 4.7.0、`multiple=True`、separator `U+3001`、`uniqueItems=True`，新建 `project.md` 含多晶片範例。
+- v4.6.0 → v4.7.0 升級：exit 0；三份作用中文件 SHA-256 全數不變，manifest 升至 4.7.0，單顆 `IT51526` 仍合法。
+- `git diff --check`：通過。
+- `pack.ps1`：exit 0，`dist/zhanlu-v4.7.0.7z`，38805 bytes，41 個檔案。
+- `7z t`：Everything is Ok；SHA-256 `D978A252AD6B8F0FC2DB8A34455BDCFFA5102B14A7240CA38098DFB93EC9BA45`。
 
 ## KIT-017 完成紀錄
 

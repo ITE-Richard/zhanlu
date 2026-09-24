@@ -42,6 +42,7 @@
   - `未填 <n> 欄`：欄位值為 `待確認`，列為警告，可繼續工作但需在回覆中列出缺口。
   - `不合法: <欄位清單>`：值不在 schema 允許範圍內，停止實質工作並要求修正。
 - `projectSchema.appliesTo` 與 `projectKind` 不符時跳過欄位檢查，`schema` 回報 `n/a`。
+- `type=pattern` 的欄位以 `pattern` 驗證完整欄位值；若同時有 `multiple=true`，以 `separator` 解讀一個以上的項目，且 `uniqueItems=true` 時不得有重複項目。
 - 完成讀取後輸出：`啟動確認：core=<版本> / project=<專案識別> / context=<索引版次> / work-item=<ID 或 none> / schema=<ok｜未填 n 欄｜不合法: 清單｜n/a> / missing=<none 或清單>`。
 - 驗證值必須取自檔案實際內容，不可推測。確認應在首次實質工作前完成，不要求早於必要的檔案讀取工具呼叫。
 - 收到「工作開始」時，重新讀取五個檔案，並依當前 work item 載入相關技能與索引資料。

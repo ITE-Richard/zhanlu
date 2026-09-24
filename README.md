@@ -1,4 +1,4 @@
-# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.6.0
+# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.7.0
 
 > 湛盧為十大名劍之首，仁道之劍：持劍者無道，劍自去之。本模組同理——不守規則、不留證據、靠猜作答，它就不為你所用。
 
@@ -23,7 +23,7 @@
 | 你手上的東西 | 正確做法 |
 |---|---|
 | GitHub repository | `git clone` 到目標專案內或機器上任一位置，再執行 `setup-zhanlu.ps1 -TargetPath <目標>` |
-| 壓縮套件 `zhanlu-v4.6.0.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-zhanlu.ps1` |
+| 壓縮套件 `zhanlu-v4.7.0.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-zhanlu.ps1` |
 | 模組母版資料夾 | 直接在母版執行 `setup-zhanlu.ps1 -TargetPath <目標>`，或先用 `pack.ps1` 產生套件 |
 | 目標專案已裝過舊版模組 | 改用 `-Update`，見〈升級既有專案〉 |
 
@@ -60,8 +60,8 @@ git status --porcelain
 不要直接把壓縮檔覆蓋解壓到目標 repository。請先解壓到暫存或相鄰資料夾，再執行安裝器；安裝器會在寫入前檢查所有衝突。
 
 ```powershell
-$archive = 'D:\transfer\zhanlu-v4.6.0.7z'
-$kitDir = 'D:\transfer\zhanlu-v4.6.0'
+$archive = 'D:\transfer\zhanlu-v4.7.0.7z'
+$kitDir = 'D:\transfer\zhanlu-v4.7.0'
 $target = 'D:\work\target-firmware-project'
 
 7z x $archive "-o$kitDir"
@@ -102,7 +102,7 @@ Get-Content .git\info\exclude | Select-String "zhanlu"
 | 專案識別、Repository | 安裝器依目標資料夾名自動填入 | 已自動 |
 | 產品類型 | `NB` | 你 |
 | 控制器領域 | `EC`／`PD`／`Keyboard & Lighting` 擇一，不可複選 | 你 |
-| 目標晶片 | ITE 型號，`IT` 加 4 至 5 位數字，可含封裝後綴 | 你 |
+| 目標晶片 | 一個或多個 ITE 型號；多顆以全形頓號 `、` 分隔且不得重複 | 你 |
 | 韌體架構 | `bare-metal`／`RTOS`／`Zephyr`／`vendor SDK`／`其他` | 你，AI 可從程式碼推測後由你確認 |
 | Build | 可直接執行的完整指令 | AI 可掃描候選，你確認 |
 | 支援工作類型（6 項） | 各自 `啟用`／`按需求`／`不適用` | 你 |
@@ -111,10 +111,11 @@ Get-Content .git\info\exclude | Select-String "zhanlu"
 | 機密或不可提交資料 | `.agents/resources/` 底下的路徑，或 `無` | 你 |
 | 必要硬體證據 | 有無主板與可取得的量測類型 | 你 |
 
-四個容易填錯的地方：
+五個容易填錯的地方：
 
 - **Build 沒有命令列進入點就填 `無 CLI，須人工於 IDE 編譯`。** Keil、IAR 這類只有 GUI 的工具鏈很常見，填了這個值 AI 會把建置驗證標成待人工執行，不會一直跟你要指令。
 - **控制器領域決定載入哪些領域技能**，不必另外填技能名稱：`EC` 載 `ec-controller`，`PD` 載 `pd-controller`，`Keyboard & Lighting` 同時載 `keyboard-controller` 與 `lighting-controller`。
+- **多顆目標晶片使用全形頓號 `、` 分隔**，例如 `IT51526、IT8298`；不要使用逗號、斜線或重複型號。這裡只列型號，各 IC 的角色以及 driver／HAL／SPEC 位置逐筆登記在 `context-index.md`。
 - **分清楚「無」和「待確認」。** 確定沒有（沒實板、沒 golden reference）就填 `無`，AI 會據此把結論限制在靜態驗證；**不確定的才留 `待確認`**，AI 會持續列為缺口提醒你。一旦填了具體內容，AI 就當事實用，不會再質疑。
 - **支援工作類型填 `不適用` 是有作用的。** 例如沒有實板就把硬體 bring-up 設為 `不適用`，AI 就不會提議那條路徑。全部填 `啟用` 等於這欄沒填。
 

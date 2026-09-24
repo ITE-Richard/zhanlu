@@ -16,6 +16,9 @@
 | SPEC-01 | 晶片規格 | 待確認 | 待確認；用途欄需帶章節與頁碼 | Primary | 待確認 |
 | HW-01 | Schematic／BOM | 待確認 | 板級連線與元件 | Primary | 待確認 |
 
+`project.md` 登記多顆目標晶片時，每顆 IC 的 SPEC 應各列一筆，並在「適用範圍」寫明
+該 IC 的角色及對應 driver／HAL；不要把多顆 IC 共用同一列而失去來源對應。
+
 SPEC 為整份 PDF 時，先讀目錄頁建立章節與頁碼對照寫在「適用範圍」欄，例如
 `eSPI 介面 ch.7 p.183-201；GPIO register ch.12 p.340-372`。沒有頁碼 AI 只能盲翻，
 且單次讀取有頁數上限，數百頁的 datasheet 會讀不完。

@@ -28,6 +28,29 @@ function Require-File([string]$RelativePath) {
     return $true
 }
 
+function Test-PatternFieldValue($Field, [string]$Value) {
+    if (-not $Field -or [string]::IsNullOrWhiteSpace([string]$Field.pattern)) {
+        return $false
+    }
+    if (-not [regex]::IsMatch($Value, [string]$Field.pattern)) {
+        return $false
+    }
+    if ($Field.multiple -eq $true) {
+        $separator = [string]$Field.separator
+        if ([string]::IsNullOrEmpty($separator)) {
+            return $false
+        }
+        $items = @($Value -split [regex]::Escape($separator))
+        if ($items.Count -eq 0 -or @($items | Where-Object { [string]::IsNullOrWhiteSpace($_) }).Count -gt 0) {
+            return $false
+        }
+        if ($Field.uniqueItems -eq $true -and @($items | Select-Object -Unique).Count -ne $items.Count) {
+            return $false
+        }
+    }
+    return $true
+}
+
 $manifestRelativePath = '.agents/module.json'
 if (-not (Require-File $manifestRelativePath)) {
     $errors | ForEach-Object { Write-Output "  [FAIL] $_" }
@@ -58,6 +81,36 @@ if ($manifest) {
     foreach ($relativePath in $packageOnlyFiles) {
         if (@($manifest.portableFiles) -notcontains $relativePath) {
             Add-ValidationError "packageOnlyFiles entry is not in portableFiles: $relativePath"
+        }
+    }
+
+    # Keep this script ASCII-compatible because Windows PowerShell 5.1 reads UTF-8
+    # source files without a BOM through the active ANSI code page.
+    $targetChipFieldName = -join @([char]0x76EE, [char]0x6A19, [char]0x6676, [char]0x7247)
+    $targetChipSeparator = [string][char]0x3001
+    $targetChipField = $manifest.projectSchema.fields.PSObject.Properties[$targetChipFieldName].Value
+    if (-not $targetChipField) {
+        Add-ValidationError 'projectSchema is missing the target-chip field.'
+    } else {
+        if ($targetChipField.type -ne 'pattern' -or
+            $targetChipField.multiple -ne $true -or
+            ([string]$targetChipField.separator) -ne $targetChipSeparator -or
+            $targetChipField.uniqueItems -ne $true) {
+            Add-ValidationError 'projectSchema target-chip field must be a unique multi-value pattern with the declared separator.'
+        }
+
+        $targetChipCases = @(
+            @{ Value = 'IT51526'; Expected = $true; Name = 'single chip' },
+            @{ Value = ('IT51526' + $targetChipSeparator + 'IT8298'); Expected = $true; Name = 'multiple chips' },
+            @{ Value = 'IT51526, IT8298'; Expected = $false; Name = 'wrong separator' },
+            @{ Value = ('IT51526' + $targetChipSeparator + 'STM32H743ZI'); Expected = $false; Name = 'invalid model' },
+            @{ Value = ('IT51526' + $targetChipSeparator + 'IT51526'); Expected = $false; Name = 'duplicate model' }
+        )
+        foreach ($case in $targetChipCases) {
+            $actual = Test-PatternFieldValue $targetChipField $case.Value
+            if ($actual -ne $case.Expected) {
+                Add-ValidationError "projectSchema target-chip regression failed: $($case.Name) ($($case.Value))"
+            }
         }
     }
 

@@ -1,8 +1,8 @@
 {
   "name": "zhanlu",
-  "version": "4.6.0",
+  "version": "4.7.0",
   "coreVersion": "ZHANLU-CORE-v4",
-  "archiveName": "zhanlu-v4.6.0.7z",
+  "archiveName": "zhanlu-v4.7.0.7z",
   "legacyMarkerNames": [
     "embedded-firmware-ai-collaboration-kit"
   ],
@@ -31,8 +31,11 @@
       },
       "目標晶片": {
         "type": "pattern",
-        "pattern": "^IT[0-9]{4,5}[A-Z]{0,3}$",
-        "example": "IT51526",
+        "pattern": "^IT[0-9]{4,5}[A-Z]{0,3}(?:、IT[0-9]{4,5}[A-Z]{0,3})*$",
+        "multiple": true,
+        "separator": "、",
+        "uniqueItems": true,
+        "example": "IT51526、IT8298",
         "required": true
       },
       "韌體架構": {
