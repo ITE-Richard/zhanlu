@@ -87,7 +87,7 @@ if ($manifest) {
     # Keep this script ASCII-compatible because Windows PowerShell 5.1 reads UTF-8
     # source files without a BOM through the active ANSI code page.
     $targetChipFieldName = -join @([char]0x76EE, [char]0x6A19, [char]0x6676, [char]0x7247)
-    $targetChipSeparator = [string][char]0x3001
+    $targetChipSeparator = [string][char]0xFF0C
     $targetChipField = $manifest.projectSchema.fields.PSObject.Properties[$targetChipFieldName].Value
     if (-not $targetChipField) {
         Add-ValidationError 'projectSchema is missing the target-chip field.'
@@ -102,7 +102,8 @@ if ($manifest) {
         $targetChipCases = @(
             @{ Value = 'IT51526'; Expected = $true; Name = 'single chip' },
             @{ Value = ('IT51526' + $targetChipSeparator + 'IT8298'); Expected = $true; Name = 'multiple chips' },
-            @{ Value = 'IT51526, IT8298'; Expected = $false; Name = 'wrong separator' },
+            @{ Value = 'IT51526, IT8298'; Expected = $false; Name = 'ASCII comma separator' },
+            @{ Value = ('IT51526' + [char]0x3001 + 'IT8298'); Expected = $false; Name = 'ideographic comma separator' },
             @{ Value = ('IT51526' + $targetChipSeparator + 'STM32H743ZI'); Expected = $false; Name = 'invalid model' },
             @{ Value = ('IT51526' + $targetChipSeparator + 'IT51526'); Expected = $false; Name = 'duplicate model' }
         )

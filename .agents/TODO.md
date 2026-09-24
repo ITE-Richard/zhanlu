@@ -24,6 +24,22 @@
 | KIT-016 | 功能開發 | 維護工具 | 新增 `update-zhanlu.ps1`，把 `git pull` + `-Update` 收成一行 | KIT-015 | 完成 | 免參數即可執行、自動定位專案、pull 失敗中止、非自有 clone 不誤 pull、選項可透傳、封裝與驗證通過 |
 | KIT-017 | 文件／封裝 | 發布 | 建立 GitHub Release v4.6.0，附可攜套件 | KIT-016 | 完成 | tag 推送、release 建立、7z asset 上傳且 SHA-256 相符 |
 | KIT-018 | 功能開發 | 專案層 schema | 「目標晶片」支援一顆或多顆 ITE IC 型號 | KIT-017 | 完成 | schema、範本與 README 語意一致；單顆／多顆／錯誤分隔／非法型號 regression 通過；母版驗證與封裝通過 |
+| KIT-019 | Bug fix | 專案層 schema | 多顆目標晶片改用全形逗號 `，` 分隔 | KIT-018 | 完成 | schema、驗證、範本與 README 一致；全形逗號通過，頓號與半形逗號拒絕；母版驗證與封裝通過 |
+
+## KIT-019 完成紀錄
+
+### 問題與修正
+- 使用者要求多顆目標晶片由頓號 `、` 改為全形逗號 `，`；原 v4.7.0 的 regex 與 `separator` 只接受頓號，故 `IT51526，IT8298` 會被判為不合法。
+- 同步修改 `module.json` 的完整值 regex、分隔符與範例，並更新驗證腳本、專案範本及 README。單顆型號仍可使用；多顆不得重複。
+- 版本升至 `4.7.1`。作用中的 `project.md` 不隨升級覆寫；已有半形逗號 `,` 或頓號 `、` 的專案須自行改為全形逗號。
+
+### 驗證證據
+- `verify-zhanlu.ps1 -PackageSource`：exit 0，zhanlu 4.7.1、41 portable／1 package-only／11 skills；Windows PowerShell AST parse 通過。
+- schema regression：`IT51526` 與 `IT51526，IT8298` 通過；半形逗號、頓號、混入非 ITE 型號及重複型號皆拒絕。
+- v4.6.0 → v4.7.1 暫存目標升級：exit 0；三份作用中文件 SHA-256 均未改變，安裝後 manifest 版本為 4.7.1，分隔符為 `U+FF0C`。
+- `git diff --check`：通過。
+- `pack.ps1`：exit 0，`dist/zhanlu-v4.7.1.7z`，38923 bytes，41 個檔案。
+- `7z t`：Everything is Ok；SHA-256 `EB5505E4C7A84FEAF2A2554F50F0D30AA977F1A89AB03DB18F1DFF0E4E3A54A9`。
 
 ## KIT-018 完成紀錄
 
