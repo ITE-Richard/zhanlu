@@ -26,9 +26,9 @@
 | KIT-018 | 功能開發 | 專案層 schema | 「目標晶片」支援一顆或多顆 ITE IC 型號 | KIT-017 | 完成 | schema、範本與 README 語意一致；單顆／多顆／錯誤分隔／非法型號 regression 通過；母版驗證與封裝通過 |
 | KIT-019 | Bug fix | 專案層 schema | 多顆目標晶片改用全形逗號 `，` 分隔 | KIT-018 | 完成 | schema、驗證、範本與 README 一致；全形逗號通過，頓號與半形逗號拒絕；母版驗證與封裝通過 |
 | KIT-020 | 文件／封裝 | 發布 | 將已驗證的 v4.7.1 推送並發布 GitHub Release | KIT-019 | 完成 | main、annotated tag 與 Release 可查，下載回驗 asset 的大小、SHA-256 與 7z 完整性均通過 |
-| KIT-021 | Bug fix／重構 | 三工具載入 | 修正 Antigravity rule 並精簡啟動工作紀錄 | KIT-020 | 已完成，待動態驗證 | 載入規則與 verifier 一致、歷史零遺失、封裝及安裝回歸通過 |
+| KIT-021 | Bug fix／重構 | 三工具載入 | 修正 Antigravity rule 並精簡啟動工作紀錄 | KIT-020 | 完成 | 載入規則與 verifier 一致、歷史零遺失、封裝及安裝回歸通過 |
 
-## 當前項目：KIT-021（靜態完成，待動態驗證）
+## 當前項目：KIT-021（完成）
 - 問題／需求：修正 Antigravity workspace rule 的載入相容性，降低啟動時強制讀取的歷史資料量。
 - 範圍：共用入口、驗證器、母版工作紀錄、範本與使用說明；不改 11 個技能本體或已安裝專案的作用中文件。
 - 使用技能：`bug-fix`、`architecture-design`。
@@ -40,7 +40,10 @@
 - `verify-zhanlu.ps1 -PackageSource` 與 `git diff --check` 通過；缺少 trigger、未關閉 frontmatter、Claude 恢復整份 TODO 匯入的負向測試均被驗證器拒絕。
 - v4.7.1 暫存安裝升級到 v4.8.0、v4.8.0 全新安裝與兩個目標的驗證器均通過；升級前後三份作用中文件的 SHA-256 與備份一致。
 - `pack.ps1` 通過，`dist/zhanlu-v4.8.0.7z` 為 39,615 bytes、41 個檔案；SHA-256 `A6905BBC0E4CA1D5B85EAA74B582392C4AFE94CC7E337C7F6EE929FB86D70797`。舊版封裝保留，未發布 Release、未推送。
-- 仍待驗證：Claude Code 與 Antigravity 的實際模型 session 載入、Antigravity 多入口是否造成重複上下文。未執行的動態驗收不得報稱通過。
+- Claude Code 動態載入（2026-09-24，使用者提供的本專案 VS Code session 回覆）：啟動確認為 `core=ZHANLU-CORE-v4 / project=zhanlu-source / context=ZHANLU-CONTEXT-v4 / work-item=KIT-021 / schema=n/a / missing=none`。該 session 回報 `CLAUDE.md` 自動展開前四份檔案，讀到核心、專案與索引 sentinel；`TODO.md` 未預先匯入，而是依規則按需讀取檔頭、總表與當前段。此為使用者提供的模型回報，非本機獨立觀察的載入追蹤。
+- Antigravity 動態啟動（2026-09-24，使用者提供的本專案 VS Code session 回覆）：啟動確認為 `core=ZHANLU-CORE-v4 / project=zhanlu-source / context=ZHANLU-CONTEXT-v4 / work-item=KIT-021 / schema=n/a / missing=none`；該 session 回報讀取五份必要檔案、識別母版 schema 為 `n/a`，並載入 `bug-fix`、`architecture-design`。此證明該環境可完成啟動流程，但回覆未提供規則來源或注入清單，不能單憑結果證明 `project-context.md` 確曾注入或排除多入口重複。該回覆稱 KIT-021 尚未 commit，與本 repository 已有 `1cac31b` 不符；Git 狀態以本機查驗為準。
+- Antigravity 受控動態驗收（2026-09-24，使用者提供的新對話輸出）：暫時在 `GEMINI.md` 與 `.agents/rules/project-context.md` 各加入不同標記，僅輸入「工作開始」後，session 在啟動確認下方同時回傳 `entry-gemini=G-7F31` 與 `entry-rule=R-B2C8`。提供的操作紀錄顯示讀取五份必要檔案及兩項技能，未列出讀取兩個入口檔案的工具呼叫。這支持兩個入口皆在啟動時注入；不能由模型回覆精確量出 prompt token 或證明底層去重機制。
+- 多入口評估：兩處入口皆含指向同一批檔案的短導引，確有少量重複；`@檔名` 只作檔案參照，不展開核心全文。保留 workspace rule 作為備援入口，未觀察到啟動錯誤；檢查時兩個暫時標記已從檔案移除，未進入套件。
 
 ## 歷史索引
 - KIT-001～KIT-020 的詳細紀錄與原有未決事項：`.agents/history/KIT-001-KIT-020.md`。
