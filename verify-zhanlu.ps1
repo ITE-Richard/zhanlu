@@ -28,6 +28,18 @@ function Require-File([string]$RelativePath) {
     return $true
 }
 
+function Find-TemplateToken([string]$Content, [string[]]$Tokens) {
+    $alternation = ($Tokens | ForEach-Object { [regex]::Escape($_) }) -join '|'
+    # Only a whole Markdown field value is an unfilled template placeholder.
+    # A prose mention of the token or a firmware identifier is valid project data.
+    $pattern = '(?m)^\s*-\s*[^:\r\n\uFF1A]+[:\uFF1A]\s*`?(?<token>' + $alternation + ')`?\s*$'
+    $match = [regex]::Match($Content, $pattern)
+    if ($match.Success) {
+        return $match.Groups['token'].Value
+    }
+    return $null
+}
+
 function Test-PatternFieldValue($Field, [string]$Value) {
     if (-not $Field -or [string]::IsNullOrWhiteSpace([string]$Field.pattern)) {
         return $false
@@ -235,11 +247,26 @@ if ($manifest -and $manifest.projectKind -ne 'kit-source') {
     }
 }
 
+# Check only placeholders actually emitted by the project templates. Firmware documents
+# may legitimately mention identifiers such as __ITE8297__.
+$templateTokens = @(
+    '__PROJECT_ID__',
+    '__REPOSITORY_NAME__',
+    '__VALIDATION_CODE__',
+    '__CONTEXT_REVISION__',
+    '__CONTEXT_CODE__'
+)
+if ((Find-TemplateToken -Content ('- Build' + [char]0xFF1A + '__PROJECT_ID__') -Tokens $templateTokens) -ne '__PROJECT_ID__' -or
+    (Find-TemplateToken -Content '__ITE8297__' -Tokens $templateTokens) -or
+    (Find-TemplateToken -Content ('- Note' + [char]0xFF1A + 'example `__PROJECT_ID__` was rejected') -Tokens $templateTokens)) {
+    Add-ValidationError 'template-token regression failed: placeholder or legitimate macro was misclassified.'
+}
 foreach ($activeFile in @('.agents/project.md', '.agents/context-index.md', '.agents/TODO.md')) {
     if (Require-File $activeFile) {
         $content = Get-Content -LiteralPath (Join-Path $root $activeFile) -Raw -Encoding UTF8
-        if ($content -match '__[A-Z0-9_-]+__') {
-            Add-ValidationError "$activeFile still contains template token: $($Matches[0])"
+        $token = Find-TemplateToken -Content $content -Tokens $templateTokens
+        if ($token) {
+            Add-ValidationError "$activeFile still contains template token: $token"
         }
     }
 }

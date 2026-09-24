@@ -1,4 +1,4 @@
-# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.8.0
+# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.8.1
 
 > 湛盧為十大名劍之首，仁道之劍：持劍者無道，劍自去之。本模組同理——不守規則、不留證據、靠猜作答，它就不為你所用。
 
@@ -23,7 +23,7 @@
 | 你手上的東西 | 正確做法 |
 |---|---|
 | GitHub repository | `git clone` 到目標專案內或機器上任一位置，再執行 `setup-zhanlu.ps1 -TargetPath <目標>` |
-| 壓縮套件 `zhanlu-v4.8.0.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-zhanlu.ps1` |
+| 壓縮套件 `zhanlu-v4.8.1.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-zhanlu.ps1` |
 | 模組母版資料夾 | 直接在母版執行 `setup-zhanlu.ps1 -TargetPath <目標>`，或先用 `pack.ps1` 產生套件 |
 | 目標專案已裝過舊版模組 | 改用 `-Update`，見〈升級既有專案〉 |
 
@@ -60,8 +60,8 @@ git status --porcelain
 不要直接把壓縮檔覆蓋解壓到目標 repository。請先解壓到暫存或相鄰資料夾，再執行安裝器；安裝器會在寫入前檢查所有衝突。
 
 ```powershell
-$archive = 'D:\transfer\zhanlu-v4.8.0.7z'
-$kitDir = 'D:\transfer\zhanlu-v4.8.0'
+$archive = 'D:\transfer\zhanlu-v4.8.1.7z'
+$kitDir = 'D:\transfer\zhanlu-v4.8.1'
 $target = 'D:\work\target-firmware-project'
 
 7z x $archive "-o$kitDir"
@@ -391,7 +391,7 @@ AI 不得猜測 pin、polarity、register value、timing、reset sequence、powe
 | `module files are tracked by this repository` | 模組被誤加入版控；照錯誤訊息執行 `git rm -r --cached`，檔案不會被刪除 |
 | `git was not found` 警告 | 安裝 git 或加入 PATH；否則需手動把訊息列出的項目加進目標的 `.git/info/exclude` |
 | 工作專案的 `.agents/` 整個不見了 | 極可能是跑過 `git clean -x`；從你自己的備份還原，模組本體可以重裝但工作歷史不行 |
-| `still contains template token: __XXX__` | 專案層三份文件還沒填，把範本 token 換成實際內容 |
+| `still contains template token: __PROJECT_ID__` | 專案層三份文件仍有模組範本佔位值，請填入實際內容；其他合法的 `__...__` 程式碼識別字不屬於範本 token |
 | `7z.exe was not found` | 安裝 7-Zip，或把 `7z.exe` 加入 PATH |
 | `.agents/` 被 `.backup-*` 佔滿 | 每次 `-Update` 都會留一份，不會自動清；跑 `clean-backups.ps1` 刪除，或 `-KeepLatest 1` 只留最新一份 |
 | 升級後專案事實不見了 | `-Update` 不會寫入作用中三份文件；若內容確實變了，代表有人手動覆蓋，請從版控還原 |
