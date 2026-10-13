@@ -29,6 +29,20 @@
 | KIT-021 | Bug fix／重構 | 三工具載入 | 修正 Antigravity rule 並精簡啟動工作紀錄 | KIT-020 | 完成 | 載入規則與 verifier 一致、歷史零遺失、封裝及安裝回歸通過 |
 | KIT-022 | Bug fix | 安裝驗證 | 修正合法程式碼識別字被誤判為範本 token | KIT-021 | 完成 | 合法巨集通過、真正範本 token 拒絕、已安裝專案升級與封裝回歸通過 |
 | KIT-023 | 文件／封裝 | 發布 | 將已驗證的 v4.8.1 推送並發布 GitHub Release | KIT-022 | 完成 | main、annotated tag 與 Release 可查，下載回驗 asset 的大小、SHA-256 與 7z 完整性均通過 |
+| KIT-024 | Bug fix／文件 | 安裝與可攜邊界 | 修正路徑越界、跨專案忽略規則、維護腳本漏查、Agora 路徑與版控指引 | KIT-023 | 完成 | 根因回歸、隔離安裝升級、資料保留、母版與封裝驗證通過；中文 commit，不 push |
+
+## 已完成項目：KIT-024
+- 問題／需求：依使用者確認的五項審查發現修正母版，加入可重跑的回歸測試。
+- 範圍：安裝、驗證、封裝、共用檢查、核心可攜導引、文件與本機工作追蹤；不修改產品韌體或外部 Agora 工具。
+- 使用技能：`bug-fix`、`firmware-code-review`。
+- 根因證據：隔離環境的舊 manifest 注入 `../stale-sentinel.review.txt` 後，`-RemoveStale` 刪除目標外測試檔仍 exit 0；同 repository 安裝 alpha 再 beta 使 alpha 的 check-ignore 從 exit 0 變 1；兩支維護腳本被追蹤仍驗證通過；本機 Agora 路徑會進入封裝；內部 README 與核心版控規定相反。
+- 已確認決策：新增共用路徑與清單檢查；忽略標記依安裝位置區分並遷移舊區塊；驗證涵蓋追蹤及忽略狀態；Agora 本機設定移入作用中專案層；升版 v4.8.2，保留舊套件。
+- 已完成靜態驗證：七支 PowerShell 原始碼的 parser errors 為 0；`verify-zhanlu.ps1 -PackageSource` 與 `git diff --check` 通過，白名單 42 個檔案、11 個技能。
+- 已完成動態驗證（腳本）：`powershell -NoProfile -ExecutionPolicy Bypass -File ./tests/regression.ps1` 全部 67 項通過；涵蓋來源與已安裝 manifest 越界拒絕且零寫入、junction 拒絕、合法 stale 刪除與目標內空目錄清理、WhatIf 零寫入、跨子專案與 linked worktree 保護、舊名稱及舊區塊遷移的 idempotence、兩支維護腳本誤追蹤、忽略缺漏、核心路徑與 sentinel、封裝清單及從解壓套件安裝。
+- 舊版實測：從本機 `v4.8.1` tag 匯出真正的舊版 source，使用其安裝器建立隔離目標，再以新版升級至 v4.8.2；三份作用中文件前後 SHA-256 完全相同，workspace 忽略保護保留。另確認既有 README、編輯器設定與目標 `.gitignore` 保留。
+- 封裝驗證：最終 `pack.ps1` 與內建 `7z t` 通過，`dist/zhanlu-v4.8.2.7z` 為 42,655 bytes、42 個檔案，SHA-256 `DCC4C3285798EE6D5EA19F2AC5F7DF82CE7D1B6605A2C2B1B342523120507EC7`。作用中專案層、測試與本機工具設定不在白名單內，僅建立新版套件，未發布或 push。
+- 提交方式：僅本 KIT-024 的母版程式碼、規則、文件及測試建立一筆中文 commit；套件輸出不 stage。
+- 仍待驗證：三工具 GUI 新 session 載入未重測；不以腳本測試代替工具動態載入。
 
 ## 已完成項目：KIT-021
 - 問題／需求：修正 Antigravity workspace rule 的載入相容性，降低啟動時強制讀取的歷史資料量。

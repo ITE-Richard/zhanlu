@@ -41,6 +41,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $sourceRoot = $PSScriptRoot
+. (Join-Path $sourceRoot '.agents/lib/module-safety.ps1')
 $manifestPath = Join-Path $sourceRoot '.agents\module.json'
 $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
@@ -69,22 +70,29 @@ if ($resolvedSourceRoot.StartsWith($targetRootWithSeparator, [System.StringCompa
     $sourceInsideTarget = $resolvedSourceRoot.Substring($targetRootWithSeparator.Length).Replace('\', '/') + '/'
 }
 
-$portableFiles = @($manifest.portableFiles)
-if ($portableFiles.Count -eq 0) {
-    throw 'module.json portableFiles must not be empty.'
-}
+$portableFiles = @(Get-ModulePortableFiles $manifest)
 $packageOnlyFiles = @($manifest.packageOnlyFiles)
 $invalidPackageOnlyFiles = @($packageOnlyFiles | Where-Object { $portableFiles -notcontains $_ })
 if ($invalidPackageOnlyFiles.Count -gt 0) {
     throw "packageOnlyFiles must also exist in portableFiles:`n  $($invalidPackageOnlyFiles -join "`n  ")"
 }
-$installFiles = @($portableFiles | Where-Object { $packageOnlyFiles -notcontains $_ })
+$installFiles = @(Get-ModuleInstallFiles $manifest)
 
 $activeFiles = @(
     '.agents/project.md',
     '.agents/context-index.md',
     '.agents/TODO.md'
 )
+foreach ($relativePath in $portableFiles) {
+    if ($activeFiles -contains $relativePath) {
+        throw "portableFiles must not contain an active project file: $relativePath"
+    }
+    [void](Resolve-ModulePath $sourceRoot $relativePath)
+}
+# Validate all target components before the first backup, copy or directory creation.
+foreach ($relativePath in @($installFiles) + $activeFiles) {
+    [void](Resolve-ModulePath $targetRoot $relativePath)
+}
 
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
@@ -97,18 +105,10 @@ $generateOnce = @(
 )
 
 # Paths that must never be tracked by the target repository.
-$moduleGitPaths = @(
-    '.agents/',
-    '.claude/',
-    'AGENTS.md',
-    'CLAUDE.md',
-    'GEMINI.md',
-    'pack.ps1',
-    'setup-zhanlu.ps1',
-    'verify-zhanlu.ps1',
-    'clean-backups.ps1',
-    'update-zhanlu.ps1'
-)
+$moduleGitPaths = @(Get-ModuleGitPaths $manifest)
+foreach ($entry in $generateOnce) {
+    [void](Resolve-ModulePath $targetRoot $entry.Destination)
+}
 
 $missing = foreach ($relativePath in $portableFiles) {
     if (-not (Test-Path -LiteralPath (Join-Path $sourceRoot $relativePath) -PathType Leaf)) {
@@ -155,8 +155,12 @@ if ($Update) {
     }
 
     $targetManifest = Get-Content -LiteralPath $targetManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
-    $installedPortableFiles = @($targetManifest.portableFiles)
-    $staleFiles = @($installedPortableFiles |
+    $installedPortableFiles = @(Get-ModulePortableFiles $targetManifest)
+    foreach ($relativePath in $installedPortableFiles) {
+        [void](Resolve-ModulePath $targetRoot $relativePath)
+    }
+    $installedInstallFiles = @(Get-ModuleInstallFiles $targetManifest)
+    $staleFiles = @($installedInstallFiles |
         Where-Object { $portableFiles -notcontains $_ } |
         Where-Object { $activeFiles -notcontains $_ } |
         Where-Object { Test-Path -LiteralPath (Join-Path $targetRoot $_) -PathType Leaf })
@@ -220,8 +224,8 @@ if ($Update) {
 }
 
 foreach ($relativePath in $installFiles) {
-    $source = Join-Path $sourceRoot $relativePath
-    $destination = Join-Path $targetRoot $relativePath
+    $source = Resolve-ModulePath $sourceRoot $relativePath
+    $destination = Resolve-ModulePath $targetRoot $relativePath
     $destinationDirectory = Split-Path -Parent $destination
     if (-not (Test-Path -LiteralPath $destinationDirectory)) {
         New-Item -ItemType Directory -Path $destinationDirectory -Force | Out-Null
@@ -231,11 +235,13 @@ foreach ($relativePath in $installFiles) {
 
 if ($Update -and $RemoveStale) {
     foreach ($relativePath in $staleFiles) {
-        $stalePath = Join-Path $targetRoot $relativePath
+        $stalePath = Resolve-ModulePath $targetRoot $relativePath
         Remove-Item -LiteralPath $stalePath -Force
         # Prune directories the removed file left empty, stopping at the target root.
         $directory = Split-Path -Parent $stalePath
-        while ($directory -and $directory.TrimEnd('\', '/') -ne $targetRoot) {
+        while ($directory -and $directory.StartsWith($targetRootWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $relativeDirectory = $directory.Substring($targetRootWithSeparator.Length)
+            [void](Resolve-ModulePath $targetRoot $relativeDirectory)
             if (@(Get-ChildItem -LiteralPath $directory -Force).Count -gt 0) {
                 break
             }
@@ -345,39 +351,56 @@ if (-not $gitCommand) {
             if ($manifest.PSObject.Properties['legacyMarkerNames']) {
                 $markerNames += @($manifest.legacyMarkerNames | ForEach-Object { [string]$_ })
             }
-            $beginMarker = "# >>> $($markerNames[0]) >>>"
-            $endMarker = "# <<< $($markerNames[0]) <<<"
+            $scopeLabel = if ($pathPrefix) { $pathPrefix.TrimEnd('/') } else { '.' }
+            $gitDir = (& $gitCommand.Source rev-parse --absolute-git-dir).Trim()
+            if ($LASTEXITCODE -ne 0) { throw 'Unable to determine worktree Git directory.' }
+            if ([System.IO.Path]::GetFullPath($gitDir) -ne [System.IO.Path]::GetFullPath($gitCommonDir)) {
+                $scopeLabel = 'worktree:' + (Split-Path -Leaf $gitDir) + '/' + $scopeLabel
+            }
+            $beginMarker = "# >>> $($markerNames[0]) [$scopeLabel] >>>"
+            $endMarker = "# <<< $($markerNames[0]) [$scopeLabel] <<<"
             $existing = if (Test-Path -LiteralPath $excludeFile) {
                 [System.IO.File]::ReadAllText($excludeFile)
             } else {
                 ''
             }
-            # Removing the current block and every retired one keeps repeated installs,
-            # updates and module renames idempotent instead of stacking stale blocks.
-            # Entries already exclusion-protected are carried over first, so an update
-            # never un-ignores a generate-once file that this installer created earlier.
-            $preservedEntries = @()
+            # Rewrite only this installation's scoped blocks. Migrate its entries from
+            # legacy unscoped blocks while keeping every other installation's entries.
+            $preservedEntries = New-Object 'System.Collections.Generic.List[string]'
+            $ownedPrefix = '/' + (ConvertTo-GitIgnoreLiteralPath $pathPrefix)
             foreach ($markerName in $markerNames) {
-                $blockPattern = [regex]::Escape("# >>> $markerName >>>") + '.*?' + [regex]::Escape("# <<< $markerName <<<") + '\r?\n?'
-                foreach ($match in [regex]::Matches($existing, $blockPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
-                    $preservedEntries += @($match.Value -split '\r?\n' | Where-Object { $_.StartsWith('/') })
+                $scopedPattern = '(?ms)^' + [regex]::Escape("# >>> $markerName [$scopeLabel] >>>") + '\r?\n.*?^' +
+                    [regex]::Escape("# <<< $markerName [$scopeLabel] <<<") + '(?:\r?\n|\z)'
+                foreach ($match in [regex]::Matches($existing, $scopedPattern)) {
+                    foreach ($line in @($match.Value -split '\r?\n' | Where-Object { $_.StartsWith('/') })) {
+                        $preservedEntries.Add($line)
+                    }
                 }
-                $existing = [regex]::Replace($existing, $blockPattern, '', [System.Text.RegularExpressions.RegexOptions]::Singleline)
+                $existing = [regex]::Replace($existing, $scopedPattern, '')
+                $legacyPattern = '(?ms)^' + [regex]::Escape("# >>> $markerName >>>") + '\r?\n.*?^' +
+                    [regex]::Escape("# <<< $markerName <<<") + '(?:\r?\n|\z)'
+                $existing = [regex]::Replace($existing, $legacyPattern, {
+                    param($legacyMatch)
+                    $foreignLines = @()
+                    foreach ($line in @($legacyMatch.Value -split '\r?\n' | Where-Object { $_.StartsWith('/') })) {
+                        if ($line.StartsWith($ownedPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+                            $preservedEntries.Add($line)
+                        } else {
+                            $foreignLines += $line
+                        }
+                    }
+                    if ($foreignLines.Count -gt 0) {
+                        return (@("# >>> $markerName >>>") + $foreignLines + @("# <<< $markerName <<<") -join "`n") + "`n"
+                    }
+                    return ''
+                })
             }
-            # Carried-over entries name files this installer wrote in an earlier run. One
-            # that no longer exists was renamed or dropped from the manifest, so keeping
-            # its rule would leave the block growing dead lines at every module rename.
-            $preservedEntries = @($preservedEntries | Where-Object {
-                $candidate = $_.TrimStart('/')
-                if ($pathPrefix -and $candidate.StartsWith($pathPrefix)) {
-                    $candidate = $candidate.Substring($pathPrefix.Length)
-                }
-                Test-Path -LiteralPath (Join-Path $targetRoot $candidate.TrimEnd('/'))
-            })
+            # A legacy pattern can protect a file in another worktree, even if it is
+            # absent here. Carry patterns forward instead of pruning by local existence.
             if ($existing.Length -gt 0 -and -not $existing.EndsWith("`n")) {
                 $existing += "`n"
             }
-            $patterns = @($excludeEntries | ForEach-Object { '/' + $pathPrefix + $_ })
+            $patterns = @($excludeEntries | ForEach-Object { '/' + (ConvertTo-GitIgnoreLiteralPath ($pathPrefix + $_)) })
             $patterns += @($preservedEntries | Select-Object -Unique | Where-Object { $patterns -notcontains $_ })
             $blockLines = @($beginMarker) + $patterns + @($endMarker)
             [System.IO.File]::WriteAllText($excludeFile, $existing + ($blockLines -join "`n") + "`n", $utf8NoBom)

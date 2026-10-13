@@ -1,8 +1,8 @@
 {
   "name": "zhanlu",
-  "version": "4.8.1",
+  "version": "4.8.2",
   "coreVersion": "ZHANLU-CORE-v4",
-  "archiveName": "zhanlu-v4.8.1.7z",
+  "archiveName": "zhanlu-v4.8.2.7z",
   "legacyMarkerNames": [
     "embedded-firmware-ai-collaboration-kit"
   ],
@@ -109,6 +109,7 @@
     "update-zhanlu.ps1",
     ".agents/module.json",
     ".agents/README.md",
+    ".agents/lib/module-safety.ps1",
     ".agents/templates/project.md",
     ".agents/templates/context-index.md",
     ".agents/templates/TODO.md",

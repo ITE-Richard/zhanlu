@@ -51,8 +51,8 @@ update-zhanlu.ps1
 建議先把 7z 解壓到暫存資料夾，再從暫存資料夾執行安裝器；不要直接覆蓋目標 repository。
 
 ```powershell
-7z x .\zhanlu-v4.8.1.7z -o'.\zhanlu-v4.8.1'
-powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.8.1\setup-zhanlu.ps1 `
+7z x .\zhanlu-v4.8.2.7z -o'.\zhanlu-v4.8.2'
+powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.8.2\setup-zhanlu.ps1 `
   -TargetPath 'D:\path\to\target-project'
 ```
 
@@ -102,7 +102,7 @@ powershell -ExecutionPolicy Bypass -File .\setup-zhanlu.ps1 `
 安裝到目標專案後，整個模組都不進該專案的版控。忽略規則寫入目標 repository 的 `.git/info/exclude`：
 
 ```text
-# >>> zhanlu >>>
+# >>> zhanlu [.] >>>
 /.agents/
 /.claude/
 /AGENTS.md
@@ -113,12 +113,14 @@ powershell -ExecutionPolicy Bypass -File .\setup-zhanlu.ps1 `
 /verify-zhanlu.ps1
 /clean-backups.ps1
 /update-zhanlu.ps1
-# <<< zhanlu <<<
+# <<< zhanlu [.] <<<
 ```
 
 用 `.git/info/exclude` 而不是目標的 `.gitignore`，是因為 `.gitignore` 本身會被 commit，會在該專案的歷史中暴露模組檔名。`.git/` 不屬於工作樹，不會被 commit 也不會被 push。標記區塊使 重複安裝與升級保持 idempotent；安裝器以 `git rev-parse --git-common-dir` 定位，worktree 與 submodule 的 `.git` 為檔案時同樣正確。
 
-標記名稱取自 `module.json` 的 `name`，已退役的名稱記錄在 `legacyMarkerNames`。升級時會把當前與所有歷史標記區塊一併移除再重寫，所以模組更名後升級舊安裝不會留下兩組規則。重寫前會先取回舊區塊既有的條目再與新條目取聯集，因此升級也不會讓先前產生的 `.vscode/settings.json` 與 workspace 檔脫離忽略。
+標記由 `module.json` 的 `name` 與安裝位置組成，例如根目錄為 `# >>> zhanlu [.] >>>`，子專案為 `# >>> zhanlu [alpha] >>>`；linked worktree 另帶 Git worktree 識別，避免共用忽略檔時互相覆寫。已退役名稱記錄在 `legacyMarkerNames`。升級只重寫當前安裝的區塊，其他安裝的規則保持原樣。舊版未帶位置的區塊會逐項遷移，保留其他位置的條目；既有忽略條目不以當前工作樹的檔案存在性刪除，避免遺失其他 worktree 的編輯器設定保護。
+
+安裝、驗證與封裝共用 `.agents/lib/module-safety.ps1`：所有白名單路徑必須是安全的相對路徑，拒絕 `..`、絕對路徑與穿越 junction／symlink。升級先檢查新舊 manifest 與來源／目標路徑，再進行備份或寫入；不安全清單會直接中止。驗證器由同一份清單檢查全部模組檔案的 Git 追蹤與忽略狀態，包含兩支維護腳本。
 
 目標不是 git repository，或機器上沒有 `git` 時，安裝仍會完成，並改為印出需要手動加入的項目。
 
@@ -171,4 +173,5 @@ powershell -ExecutionPolicy Bypass -File .\pack.ps1
 - 新增或改名 skill 時，同步更新 canonical skill、Claude loader 與 `module.json`。
 - 新增可攜檔案只改 `module.json`，不要在 `pack.ps1` 再維護第二份清單。
 - 修改後先跑驗證，再重建套件；不要用 `7z u` 更新舊封裝。
-- 專案層資料可提交到目標專案，但不得回灌到通用 7z。
+- 目標專案的 `.agents/`、作用中專案層與模組檔案不進目標版控，需由使用者納入本機備份，也不得回灌到通用 7z；模組母版本身照常版控。
+- Agora 等選用工具的本機位置與操作文件登記在作用中的 `project.md`／`context-index.md`；共用核心只保留通用導引，新專案須自行設定。

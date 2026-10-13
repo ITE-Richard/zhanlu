@@ -87,7 +87,7 @@
 - 不猜測 register value、pin、polarity、timing、delay、reset sequence 或 power rail ordering。
 - 不為通過 build 而關閉 warning、繞過 assert、註解測試或忽略 error handling。
 - 不修改 generated code、第三方 vendor code、binary、build output 或唯讀基準，除非使用者明確要求。
-- 模組自身在目標專案內唯讀：`AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`.agents/module.json`、`.agents/skills/`、`.agents/templates/`、`.agents/rules/`、`.claude/` 與五支 `.ps1` 一律不得修改；共用規則的修改回到模組母版，再以 `-Update` 下發。
+- 模組自身在目標專案內唯讀：`AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`.agents/module.json`、`.agents/lib/`、`.agents/skills/`、`.agents/templates/`、`.agents/rules/`、`.claude/` 與五支 `.ps1` 一律不得修改；共用規則的修改回到模組母版，再以 `-Update` 下發。
 - 上述唯讀範圍的例外只有三份作用中文件（`.agents/project.md`、`.agents/context-index.md`、`.agents/TODO.md`）與兩個資料掛載點（`.agents/resources/`、`.agents/reference-projects/`）。
 - 專案內部另有不得修改的路徑時，登記於 `project.md` 的額外唯讀區域。
 - 不混合無關 work item，不重排無關程式碼；patch 必須可審查、可驗證、可回退。
@@ -119,6 +119,19 @@
 ## 溝通指令
 - 「套用到新專案」：先執行或依照 `setup-zhanlu.ps1` 盤點衝突，建立專案層，分列可自動查得與需使用者提供的資料，再執行驗證。
 - 「工作開始」：重新完成 Session 載入確認，選定 work item 與技能，載入索引指向的必要證據後再工作。
+
+<!-- agora:begin -->
+## Agora：與 Claude Code、Antigravity 討論與分工
+
+當使用者要求「跟 Claude／Antigravity 討論」「問問其他 AI」「你們三個討論」「讓你們討論」「分工完成」或提到 Agora 討論串時（Claude Code 與 Antigravity 只能透過 Agora 聯絡，不要改用自己的子代理模擬它們的意見）：
+
+- 工具位置、操作文件與本機設定由 `.agents/project.md` 記錄，並在 `.agents/context-index.md` 登記；共用核心不記錄本機實體路徑。
+- 使用前讀取索引指向的操作文件或已安裝的 `agora` 技能；工具未設定或不存在時回報缺口，不猜測位置、不模擬其他 AI 的意見。
+- 先讀相關程式碼整理立場，再依操作文件發起或接續討論；討論串與使用者可閱讀的紀錄位置依專案設定。
+- 分派工作後等待完成，再審查 git diff 並執行驗證。
+- 你用 `--from codex` 發言；其他 AI 的說法先查證；討論期間不改程式碼；結束時向使用者回報共識、分歧與下一步。
+- 若你是被 Agora 呼叫來回覆的（環境變數 AGORA_INVOKED=1），直接回覆即可，不要再執行討論或分派指令。
+<!-- agora:end -->
 
 ## 規範版本
 - 本次規範版本：`ZHANLU-CORE-v4`

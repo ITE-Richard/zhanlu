@@ -14,13 +14,24 @@ if ([string]::IsNullOrWhiteSpace($RootPath)) {
 }
 $root = (Resolve-Path -LiteralPath $RootPath).Path
 $errors = New-Object System.Collections.Generic.List[string]
+$safetyScript = Join-Path $PSScriptRoot '.agents/lib/module-safety.ps1'
+if (-not (Test-Path -LiteralPath $safetyScript -PathType Leaf)) {
+    Write-Output '  [FAIL] Missing shared checks: .agents/lib/module-safety.ps1'
+    exit 1
+}
+. $safetyScript
 
 function Add-ValidationError([string]$Message) {
     $script:errors.Add($Message)
 }
 
 function Require-File([string]$RelativePath) {
-    $path = Join-Path $root $RelativePath
+    try {
+        $path = Resolve-ModulePath $root $RelativePath
+    } catch {
+        Add-ValidationError $_.Exception.Message
+        return $false
+    }
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         Add-ValidationError "Missing file: $RelativePath"
         return $false
@@ -76,6 +87,17 @@ try {
 }
 
 if ($manifest) {
+    try {
+        $portableFiles = @(Get-ModulePortableFiles $manifest)
+        $installFiles = @(Get-ModuleInstallFiles $manifest)
+        foreach ($relativePath in $portableFiles) {
+            if ($relativePath -in @('.agents/project.md', '.agents/context-index.md', '.agents/TODO.md')) {
+                throw "portableFiles must not contain an active project file: $relativePath"
+            }
+        }
+    } catch {
+        Add-ValidationError $_.Exception.Message
+    }
     foreach ($relativePath in @($manifest.requiredSessionFiles)) {
         [void](Require-File $relativePath)
     }
@@ -140,6 +162,15 @@ if ($manifest) {
         $core = Get-Content -LiteralPath (Join-Path $root 'AGENTS.md') -Raw -Encoding UTF8
         if ($core -notmatch [regex]::Escape([string]$manifest.coreVersion)) {
             Add-ValidationError "AGENTS.md does not contain coreVersion: $($manifest.coreVersion)"
+        }
+        if ($core -match '(?i)\b[A-Z]:[\\/]') {
+            Add-ValidationError 'AGENTS.md must not contain machine-specific drive paths.'
+        }
+        $coreSections = [regex]::Matches($core, '(?m)^##[ \t]+[^\r\n]+')
+        if ($coreSections.Count -eq 0 -or
+            $core.Substring($coreSections[$coreSections.Count - 1].Index) -notmatch [regex]::Escape([string]$manifest.coreVersion) -or
+            $core -notmatch 'sentinel[^\r\n]*\s*\z') {
+            Add-ValidationError 'AGENTS.md must end with the core-version sentinel section.'
         }
     }
 
@@ -223,22 +254,29 @@ if ($manifest -and $manifest.projectKind -ne 'kit-source') {
                 $ErrorActionPreference = $previousErrorAction
             }
             if ($LASTEXITCODE -eq 0 -and $insideWorkTree -eq 'true') {
-                $moduleGitPaths = @(
-                    '.agents',
-                    '.claude',
-                    'AGENTS.md',
-                    'CLAUDE.md',
-                    'GEMINI.md',
-                    'pack.ps1',
-                    'setup-zhanlu.ps1',
-                    'verify-zhanlu.ps1'
-                )
-                $trackedFiles = @(& $gitCommand.Source ls-files -- $moduleGitPaths)
-                if ($LASTEXITCODE -eq 0 -and $trackedFiles.Count -gt 0) {
+                $moduleGitPaths = @(Get-ModuleGitPaths $manifest)
+                $trackedFiles = @(& $gitCommand.Source --literal-pathspecs ls-files -- $moduleGitPaths)
+                if ($LASTEXITCODE -ne 0) {
+                    Add-ValidationError 'git ls-files failed; tracking status could not be verified.'
+                } elseif ($trackedFiles.Count -gt 0) {
                     Add-ValidationError (
                         "module files are tracked by this repository ($($trackedFiles.Count) file(s)); " +
                         "untrack them with: git rm -r --cached $($moduleGitPaths -join ' ')"
                     )
+                }
+                $ignorePaths = @(@($moduleGitPaths) + @($installFiles) + @(
+                    '.agents/project.md', '.agents/context-index.md', '.agents/TODO.md'
+                ) | Select-Object -Unique)
+                # Pass paths as arguments: PS 5.1 pipes CRLF, and Git's --stdin keeps
+                # the CR as part of the filename, causing false missing-ignore errors.
+                $ignoredPaths = @(& $gitCommand.Source -c core.quotepath=false check-ignore --no-index -- $ignorePaths)
+                if ($LASTEXITCODE -notin @(0, 1)) {
+                    Add-ValidationError 'git check-ignore failed; ignore protection could not be verified.'
+                } else {
+                    $unprotected = @($ignorePaths | Where-Object { $ignoredPaths -notcontains $_ })
+                    if ($unprotected.Count -gt 0) {
+                        Add-ValidationError ("Module paths are not ignored; re-run setup-zhanlu.ps1 -Update: " + ($unprotected -join ', '))
+                    }
                 }
             }
         } finally {

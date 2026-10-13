@@ -12,7 +12,14 @@
 | PACK-01 | 打包工具 | `./pack.ps1` | 建立可攜套件 | Primary |
 | SETUP-01 | 安裝工具 | `./setup-zhanlu.ps1` | 安全複製與初始化 | Primary |
 | VERIFY-01 | 驗證工具 | `./verify-zhanlu.ps1` | 結構、引用與封裝邊界檢查 | Primary |
+| SAFETY-01 | 共用檢查 | `./.agents/lib/module-safety.ps1` | 安裝、驗證與封裝共用的路徑及檔案清單檢查 | Primary |
+| TEST-01 | 回歸測試 | `./tests/regression.ps1` | 隔離重現路徑越界、忽略規則與文件邊界；僅母版使用，不進套件 | Primary |
 | INSTALL-DOC-01 | 套件入口說明 | `./README.md` | 解壓、安裝、初始化與首次啟動步驟 | Primary |
+
+## 本機選用工具
+| ID | 類型 | 路徑 | 用途與限制 | 權威性 |
+|---|---|---|---|---|
+| LOCAL-AGORA-01 | 操作文件 | `D:/github/agora/README.md` | 本機跨工具討論與分派；實體路徑為定位既有安裝所需，設定見 `project.md`，不進可攜套件 | Primary |
 
 ## 專案文件
 | ID | 類型 | 路徑 | 用途 | 權威性 |

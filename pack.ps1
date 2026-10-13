@@ -9,9 +9,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
+. (Join-Path $root '.agents/lib/module-safety.ps1')
 $manifestPath = Join-Path $root '.agents\module.json'
 $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
-$portableFiles = @($manifest.portableFiles)
+$portableFiles = @(Get-ModulePortableFiles $manifest)
 
 if ($portableFiles.Count -eq 0) {
     throw 'module.json portableFiles must not be empty.'
@@ -22,10 +23,8 @@ if ($uniquePortableFiles.Count -ne $portableFiles.Count) {
 }
 
 foreach ($relativePath in $portableFiles) {
-    if ([System.IO.Path]::IsPathRooted($relativePath) -or ($relativePath -split '[/\\]') -contains '..') {
-        throw "portableFiles must use safe relative paths: $relativePath"
-    }
-    if (-not (Test-Path -LiteralPath (Join-Path $root $relativePath) -PathType Leaf)) {
+    $safeSource = Resolve-ModulePath $root $relativePath
+    if (-not (Test-Path -LiteralPath $safeSource -PathType Leaf)) {
         throw "Portable file is missing: $relativePath"
     }
 }
@@ -54,7 +53,7 @@ New-Item -ItemType Directory -Path $stage | Out-Null
 
 try {
     foreach ($relativePath in $portableFiles) {
-        $source = Join-Path $root $relativePath
+        $source = Resolve-ModulePath $root $relativePath
         $destination = Join-Path $stage $relativePath
         $destinationDirectory = Split-Path -Parent $destination
         if (-not (Test-Path -LiteralPath $destinationDirectory)) {
@@ -132,6 +131,12 @@ try {
     }
 } finally {
     if (Test-Path -LiteralPath $stage) {
-        Remove-Item -LiteralPath $stage -Recurse -Force
+        $resolvedStage = [System.IO.Path]::GetFullPath($stage)
+        $tempPrefix = [System.IO.Path]::GetFullPath($env:TEMP).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+        if (-not $resolvedStage.StartsWith($tempPrefix, [System.StringComparison]::OrdinalIgnoreCase) -or
+            (Split-Path -Leaf $resolvedStage) -notmatch '^zhanlu-[a-f0-9]{32}$') {
+            throw 'Refusing to clean staging outside the verified temporary directory.'
+        }
+        Remove-Item -LiteralPath $resolvedStage -Recurse -Force
     }
 }
