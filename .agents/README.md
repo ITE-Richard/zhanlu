@@ -51,8 +51,8 @@ update-zhanlu.ps1
 建議先把 7z 解壓到暫存資料夾，再從暫存資料夾執行安裝器；不要直接覆蓋目標 repository。
 
 ```powershell
-7z x .\zhanlu-v4.8.3.7z -o'.\zhanlu-v4.8.3'
-powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.8.3\setup-zhanlu.ps1 `
+7z x .\zhanlu-v4.8.4.7z -o'.\zhanlu-v4.8.4'
+powershell -ExecutionPolicy Bypass -File .\zhanlu-v4.8.4\setup-zhanlu.ps1 `
   -TargetPath 'D:\path\to\target-project'
 ```
 
@@ -174,4 +174,3 @@ powershell -ExecutionPolicy Bypass -File .\pack.ps1
 - 新增可攜檔案只改 `module.json`，不要在 `pack.ps1` 再維護第二份清單。
 - 修改後先跑驗證，再重建套件；不要用 `7z u` 更新舊封裝。
 - 目標專案的 `.agents/`、作用中專案層與模組檔案不進目標版控，需由使用者納入本機備份，也不得回灌到通用 7z；模組母版本身照常版控。
-- Agora 等選用工具的本機位置與操作文件登記在作用中的 `project.md`／`context-index.md`；共用核心只保留通用導引，新專案須自行設定。

@@ -31,6 +31,17 @@
 | KIT-023 | 文件／封裝 | 發布 | 將已驗證的 v4.8.1 推送並發布 GitHub Release | KIT-022 | 完成 | main、annotated tag 與 Release 可查，下載回驗 asset 的大小、SHA-256 與 7z 完整性均通過 |
 | KIT-024 | Bug fix／文件 | 安裝與可攜邊界 | 修正路徑越界、跨專案忽略規則、維護腳本漏查、Agora 路徑與版控指引 | KIT-023 | 完成 | 根因回歸、隔離安裝升級、資料保留、母版與封裝驗證通過；中文 commit，不 push |
 | KIT-025 | Bug fix | 共用核心 | Agora 導引改為三工具通用，不再要求所有工具以 codex 身分發言 | KIT-024 | 完成 | 核心與專案層不綁單一發言身分、verify 拒絕單一身分、regression 與封裝通過；中文 commit，不 push |
+| KIT-026 | 重構 | 模組邊界 | 移除 zhanlu 對 Agora 的全部耦合，模組視 Agora 為不存在 | KIT-025 | 完成 | 核心、專案層、索引、文件、驗證與測試不再提及 Agora；套件零 Agora 字樣；regression 與封裝通過；中文 commit，不 push |
+
+## 已完成項目：KIT-026
+- 問題／需求：使用者決定 zhanlu 維持單純，必須視 Agora 為不存在。KIT-024 起核心內含 Agora 標記區段，Agora 的 `install` 與 zhanlu 的 `-Update` 會互相覆寫同一段，且未使用 Agora 的專案也會收到該導引。
+- 範圍：移除 `AGENTS.md` 的 `agora:begin/end` 區段、作用中 `project.md` 與 `context-index.md` 的本機 Agora 登記、兩份 README 的 Agora 說明、KIT-025 新增的發言身分檢查與兩項 regression；磁碟路徑 regression 改用不依賴 Agora 標記的 fixture。歷史紀錄維持原樣。不修改外部 Agora 工具。
+- 決策：取代 KIT-024「核心保留通用 Agora 導引」與 KIT-025 的發言身分修正；zhanlu 不偵測、不保留、不檢查 Agora 寫入的內容。v4.8.3 未發布即被取代，版號升為 v4.8.4。
+- 影響：若在 zhanlu 專案執行 `agora install`，其寫入 `AGENTS.md` 的區段會在下次 `-Update` 被覆寫；若含本機路徑，`verify-zhanlu.ps1 -PackageSource` 依既有規則拒絕封裝。Agora 寫入 `.git/info/exclude` 的區塊與未追蹤檔案不受 zhanlu 管理。
+- 已完成靜態驗證：tracked 檔案（歷史紀錄除外）`git grep -i agora` 零結果；`verify-zhanlu.ps1 -PackageSource`（由 `pack.ps1` 執行）與 `git diff --check` 通過。
+- 已完成動態驗證（腳本）：`tests/regression.ps1` 67 項全部通過。
+- 封裝驗證：`pack.ps1` 與內建 `7z t` 通過，`dist/zhanlu-v4.8.4.7z` 為 42,243 bytes、42 個檔案，SHA-256 `51499AB281A5A8531FEF64135F2D1EC9CBD6B07E0899AE0A6A97BAE75AB26C5A`；解壓後全文搜尋 `agora` 零結果。未發布、未 push。
+- 仍待驗證：三工具 GUI 新 session 載入未重測。
 
 ## 已完成項目：KIT-025
 - 問題／需求：共用核心 `AGENTS.md` 的 Agora 區塊沿用 Codex 視角，要求「你用 `--from codex` 發言」；Claude Code 與 Antigravity 也讀同一份核心，照字面會冒用 codex 身分。該區塊在 KIT-024 已改為通用導引並隨套件發布，`dist/zhanlu-v4.8.2.7z` 內含此句。

@@ -1,4 +1,4 @@
-# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.8.3
+# 湛盧 Zhanlu — 嵌入式韌體 AI 協作模組 v4.8.4
 
 > 湛盧為十大名劍之首，仁道之劍：持劍者無道，劍自去之。本模組同理——不守規則、不留證據、靠猜作答，它就不為你所用。
 
@@ -23,7 +23,7 @@
 | 你手上的東西 | 正確做法 |
 |---|---|
 | GitHub repository | `git clone` 到目標專案內或機器上任一位置，再執行 `setup-zhanlu.ps1 -TargetPath <目標>` |
-| 壓縮套件 `zhanlu-v4.8.3.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-zhanlu.ps1` |
+| 壓縮套件 `zhanlu-v4.8.4.7z` | 解壓到暫存資料夾，再對目標專案執行 `setup-zhanlu.ps1` |
 | 模組母版資料夾 | 直接在母版執行 `setup-zhanlu.ps1 -TargetPath <目標>`，或先用 `pack.ps1` 產生套件 |
 | 目標專案已裝過舊版模組 | 改用 `-Update`，見〈升級既有專案〉 |
 
@@ -60,8 +60,8 @@ git status --porcelain
 不要直接把壓縮檔覆蓋解壓到目標 repository。請先解壓到暫存或相鄰資料夾，再執行安裝器；安裝器會在寫入前檢查所有衝突。
 
 ```powershell
-$archive = 'D:\transfer\zhanlu-v4.8.3.7z'
-$kitDir = 'D:\transfer\zhanlu-v4.8.3'
+$archive = 'D:\transfer\zhanlu-v4.8.4.7z'
+$kitDir = 'D:\transfer\zhanlu-v4.8.4'
 $target = 'D:\work\target-firmware-project'
 
 7z x $archive "-o$kitDir"
@@ -363,8 +363,6 @@ AI 不得猜測 pin、polarity、register value、timing、reset sequence、powe
 `verify-zhanlu.ps1` 依安裝白名單以 `git ls-files` 檢查全部模組檔案是否被誤追蹤，包含兩支維護腳本；也會以 `git check-ignore` 檢查忽略保護是否生效。誤追蹤會報錯並附修復指令；忽略規則缺漏則提示重新執行 `-Update`。
 
 安裝與升級在寫入前檢查新舊 manifest、來源與目標路徑，拒絕絕對路徑、`..` 與 junction／symlink；`-RemoveStale` 只會刪除目標內經檢查的舊模組檔案。共用檢查位於 `.agents/lib/module-safety.ps1`，由安裝、驗證與封裝工具共同使用。
-
-若使用 Agora，將本機工具位置與操作文件登記在作用中的 `project.md`／`context-index.md`；新專案須自行設定。這些設定不進可攜套件，`AGENTS.md` 保留通用導引。
 
 母版維護可執行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\tests\regression.ps1`，在隔離暫存目錄驗證上述邊界及封裝／安裝流程。測試需 Git 與 7-Zip，不進可攜套件。
 

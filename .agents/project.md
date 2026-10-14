@@ -20,7 +20,7 @@
 - Test：`powershell -ExecutionPolicy Bypass -File .\verify-zhanlu.ps1 -PackageSource`
 - Regression：`powershell -NoProfile -ExecutionPolicy Bypass -File .\tests\regression.ps1`
 - Package：`powershell -ExecutionPolicy Bypass -File .\pack.ps1`
-- 產出：`./dist/zhanlu-v4.8.3.7z`
+- 產出：`./dist/zhanlu-v4.8.4.7z`
 
 ## 支援工作類型
 - Bug fix、程式碼整合、功能開發、韌體移植、硬體 bring-up、重構與程式碼審查。
@@ -34,16 +34,6 @@
 - 作用中專案層可記錄本機選用工具的實體路徑並註明理由；這些設定不進可攜套件，新專案需自行登記。
 - `.agents/resources/` 與 `.agents/reference-projects/` 在母版只保留自我保護的 `.gitignore`。
 - 作用中的 `project.md`、`context-index.md` 與 `TODO.md` 不得進入可攜套件。
-
-## 本機選用工具
-- Agora 工具：`python D:/github/agora/agora.py`。
-- Agora 操作文件：`D:/github/agora/README.md`。
-- 登記理由：保留本機既有的跨工具討論與分派能力；路徑只適用本工作副本，不是套件安裝需求。
-- 討論串：`.agora/threads/<id>/`，`transcript.md` 供使用者閱讀。
-- 發起前先讀操作文件與相關程式碼；以 `new "主題"` 建立討論，再以 `send <id> --from <自己的身分> --file 開場.md` 發言；`--to <對方身分>` 可指定一方。身分為 `claude`、`codex` 或 `antigravity`，依目前執行的工具填入。
-- 討論在背景執行，等待被中斷時可用 `wait <id>` 接續，`activity` 查看進度。
-- 分派使用 `assign <id> --from <自己的身分> --to <對方身分> --file 工作單.md`，再以 `status <id> --wait 900` 查看完成情況；完成後審查差異並驗證。
-- 使用時以完整工具命令接上述參數；討論期間不改程式碼，其他 AI 的說法需查證。
 
 ## 載入驗證碼
 - 本次驗證碼：`ZHANLU-V4-F6C3C4`
