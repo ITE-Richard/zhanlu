@@ -32,6 +32,15 @@
 | KIT-024 | Bug fix／文件 | 安裝與可攜邊界 | 修正路徑越界、跨專案忽略規則、維護腳本漏查、Agora 路徑與版控指引 | KIT-023 | 完成 | 根因回歸、隔離安裝升級、資料保留、母版與封裝驗證通過；中文 commit，不 push |
 | KIT-025 | Bug fix | 共用核心 | Agora 導引改為三工具通用，不再要求所有工具以 codex 身分發言 | KIT-024 | 完成 | 核心與專案層不綁單一發言身分、verify 拒絕單一身分、regression 與封裝通過；中文 commit，不 push |
 | KIT-026 | 重構 | 模組邊界 | 移除 zhanlu 對 Agora 的全部耦合，模組視 Agora 為不存在 | KIT-025 | 完成 | 核心、專案層、索引、文件、驗證與測試不再提及 Agora；套件零 Agora 字樣；regression 與封裝通過；中文 commit，不 push |
+| KIT-027 | 文件／封裝 | 發布 | 將已驗證的 v4.8.4 推送並發布 GitHub Release | KIT-026 | 完成 | main、annotated tag 與 Release 可查，下載回驗 asset 的大小、SHA-256 與 7z 完整性均通過 |
+
+## 已完成項目：KIT-027
+- 問題／需求：使用者要求 commit、push 並發布 release。
+- 範圍：推送 `main` 與 annotated tag、建立 GitHub Release 並上傳 `dist/zhanlu-v4.8.4.7z`；不改程式碼。v4.8.2、v4.8.3 未單獨發布，其內容併入 v4.8.4 的說明。
+- 方法：本機未安裝 `gh`；`git push` 走 Git Credential Manager，Release 建立與 asset 上傳以同一 GitHub 憑證呼叫 REST API，腳本放在 session scratchpad，未輸出 token、未寫入 repository。
+- 已完成：`227d6d9` 推送至 `origin/main`；annotated tag `v4.8.4`（物件 `7183d9d`）指向同一 commit；Release `湛盧 v4.8.4` 為非草稿、非預發布，且為 latest，資產 `zhanlu-v4.8.4.7z` 狀態 uploaded。
+- 下載回驗：從公開下載網址取回 42,243 bytes，SHA-256 `51499AB281A5A8531FEF64135F2D1EC9CBD6B07E0899AE0A6A97BAE75AB26C5A` 與本地一致；`7z t` Everything is Ok、Files: 42。
+- 仍待驗證：三工具 GUI 新 session 載入未重測；`dist/` 內 v4.8.2、v4.8.3 舊套件含 Agora 段落，保留待使用者決定是否刪除。
 
 ## 已完成項目：KIT-026
 - 問題／需求：使用者決定 zhanlu 維持單純，必須視 Agora 為不存在。KIT-024 起核心內含 Agora 標記區段，Agora 的 `install` 與 zhanlu 的 `-Update` 會互相覆寫同一段，且未使用 Agora 的專案也會收到該導引。
