@@ -121,15 +121,15 @@
 - 「工作開始」：重新完成 Session 載入確認，選定 work item 與技能，載入索引指向的必要證據後再工作。
 
 <!-- agora:begin -->
-## Agora：與 Claude Code、Antigravity 討論與分工
+## Agora：跨工具討論與分工
 
-當使用者要求「跟 Claude／Antigravity 討論」「問問其他 AI」「你們三個討論」「讓你們討論」「分工完成」或提到 Agora 討論串時（Claude Code 與 Antigravity 只能透過 Agora 聯絡，不要改用自己的子代理模擬它們的意見）：
+當使用者要求「跟其他 AI 討論」「問問其他 AI」「你們三個討論」「讓你們討論」「分工完成」或提到 Agora 討論串時（Claude Code、Codex 與 Antigravity 彼此只能透過 Agora 聯絡，不要改用自己的子代理模擬其他 AI 的意見）：
 
 - 工具位置、操作文件與本機設定由 `.agents/project.md` 記錄，並在 `.agents/context-index.md` 登記；共用核心不記錄本機實體路徑。
 - 使用前讀取索引指向的操作文件或已安裝的 `agora` 技能；工具未設定或不存在時回報缺口，不猜測位置、不模擬其他 AI 的意見。
 - 先讀相關程式碼整理立場，再依操作文件發起或接續討論；討論串與使用者可閱讀的紀錄位置依專案設定。
 - 分派工作後等待完成，再審查 git diff 並執行驗證。
-- 你用 `--from codex` 發言；其他 AI 的說法先查證；討論期間不改程式碼；結束時向使用者回報共識、分歧與下一步。
+- 以目前執行的工具身分發言：Claude Code 用 `--from claude`、Codex 用 `--from codex`、Antigravity 用 `--from antigravity`，不得冒用其他工具身分；其他 AI 的說法先查證；討論期間不改程式碼；結束時向使用者回報共識、分歧與下一步。
 - 若你是被 Agora 呼叫來回覆的（環境變數 AGORA_INVOKED=1），直接回覆即可，不要再執行討論或分派指令。
 <!-- agora:end -->
 

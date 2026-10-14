@@ -172,6 +172,13 @@ if ($manifest) {
             $core -notmatch 'sentinel[^\r\n]*\s*\z') {
             Add-ValidationError 'AGENTS.md must end with the core-version sentinel section.'
         }
+        # The core is read by every tool; naming one Agora identity makes the others impersonate it.
+        $agoraIdentities = @('claude', 'codex', 'antigravity')
+        $namedIdentities = @([regex]::Matches($core, '--from\s+`?([A-Za-z]+)') | ForEach-Object { $_.Groups[1].Value.ToLowerInvariant() } |
+            Where-Object { $agoraIdentities -contains $_ } | Select-Object -Unique)
+        if ($namedIdentities.Count -gt 0 -and $namedIdentities.Count -ne $agoraIdentities.Count) {
+            Add-ValidationError "AGENTS.md must not bind the Agora speaking identity to a single tool: $($namedIdentities -join ', ')"
+        }
     }
 
     $expectedImports = @(

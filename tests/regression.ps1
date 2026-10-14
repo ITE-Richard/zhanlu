@@ -235,6 +235,10 @@ try {
     [System.IO.File]::WriteAllText($fixtureCorePath, ($fixtureCore + "`n## Extra section`nUnexpected tail`n"), $utf8)
     $result = Invoke-Child $verifier @('-RootPath', $fixture, '-PackageSource')
     Assert-Case ($result.Exit -ne 0 -and $result.Output -match 'sentinel section') 'Reject content after core sentinel section'
+    Assert-Case ($fixtureCore.Contains('`--from claude`') -and $fixtureCore.Contains('`--from antigravity`')) 'Core names every Agora identity'
+    [System.IO.File]::WriteAllText($fixtureCorePath, $fixtureCore.Replace('`--from claude`', '').Replace('`--from antigravity`', ''), $utf8)
+    $result = Invoke-Child $verifier @('-RootPath', $fixture, '-PackageSource')
+    Assert-Case ($result.Exit -ne 0 -and $result.Output -match 'single tool') 'Reject single Agora identity in shared core'
     [System.IO.File]::WriteAllText($fixtureCorePath, $fixtureCore, $utf8)
 
     $special = Join-Path $repo 'space [board]'

@@ -30,6 +30,19 @@
 | KIT-022 | Bug fix | 安裝驗證 | 修正合法程式碼識別字被誤判為範本 token | KIT-021 | 完成 | 合法巨集通過、真正範本 token 拒絕、已安裝專案升級與封裝回歸通過 |
 | KIT-023 | 文件／封裝 | 發布 | 將已驗證的 v4.8.1 推送並發布 GitHub Release | KIT-022 | 完成 | main、annotated tag 與 Release 可查，下載回驗 asset 的大小、SHA-256 與 7z 完整性均通過 |
 | KIT-024 | Bug fix／文件 | 安裝與可攜邊界 | 修正路徑越界、跨專案忽略規則、維護腳本漏查、Agora 路徑與版控指引 | KIT-023 | 完成 | 根因回歸、隔離安裝升級、資料保留、母版與封裝驗證通過；中文 commit，不 push |
+| KIT-025 | Bug fix | 共用核心 | Agora 導引改為三工具通用，不再要求所有工具以 codex 身分發言 | KIT-024 | 完成 | 核心與專案層不綁單一發言身分、verify 拒絕單一身分、regression 與封裝通過；中文 commit，不 push |
+
+## 已完成項目：KIT-025
+- 問題／需求：共用核心 `AGENTS.md` 的 Agora 區塊沿用 Codex 視角，要求「你用 `--from codex` 發言」；Claude Code 與 Antigravity 也讀同一份核心，照字面會冒用 codex 身分。該區塊在 KIT-024 已改為通用導引並隨套件發布，`dist/zhanlu-v4.8.2.7z` 內含此句。
+- 範圍：`AGENTS.md` 的 Agora 區塊、作用中 `project.md` 的本機 Agora 指令、`verify-zhanlu.ps1`、`tests/regression.ps1` 與版號；不修改外部 Agora 工具。
+- 使用技能：`bug-fix`。
+- 決策：保留 KIT-024「核心保留通用 Agora 導引」的決定，不在打包時移除區塊；改為依目前執行的工具填入 `claude`、`codex` 或 `antigravity`（身分清單取自 Agora `AI_PARTIES`）。版號升為 v4.8.3，v4.8.2 套件保留未發布。
+- 已知限制：在本工作副本重跑 `agora install` 會以 Agora 自身的 Codex 範本（含本機路徑）覆寫標記區段；新的 verify 會以單一身分與本機路徑兩項錯誤擋下封裝。Agora 範本是否改為通用，屬 Agora 專案範圍。
+- 根因證據：以 HEAD 的 `AGENTS.md` 搭配新版 verifier 執行 `-PackageSource`，回報 `AGENTS.md must not bind the Agora speaking identity to a single tool: codex` 並失敗。
+- 已完成靜態驗證：`verify-zhanlu.ps1 -PackageSource` 通過（42 個檔案、11 個技能）；`git diff --check` 通過。
+- 已完成動態驗證（腳本）：`tests/regression.ps1` 69 項全部通過，新增核心三種身分皆在與移除兩種身分後被拒絕兩項。
+- 封裝驗證：`pack.ps1` 與內建 `7z t` 通過，`dist/zhanlu-v4.8.3.7z` 為 42,925 bytes、42 個檔案，SHA-256 `CA6015BF45A8F5D1E1BCF17715DC522D3C2728E124AD30D435B05DFD9A166EA0`；解壓後 `AGENTS.md` 含 `--from claude`、`--from codex`、`--from antigravity`。未發布、未 push。
+- 仍待驗證：三工具 GUI 新 session 載入與實際 Agora 發言身分未實測。
 
 ## 已完成項目：KIT-024
 - 問題／需求：依使用者確認的五項審查發現修正母版，加入可重跑的回歸測試。
